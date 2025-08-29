@@ -2,13 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/*
+  Design system — tuned to match OriginTrail's visual style.
+  All colors are HSL. Extras include gradients, shadows, glass, buttons, etc.
 */
 
 @layer base {
   :root {
-    /* OriginTrail Inspired Dark Theme */
+    /* Core surface & text */
     --background: 225 100% 3%;
     --foreground: 210 20% 95%;
 
@@ -18,16 +19,20 @@ All colors MUST be HSL.
     --popover: 225 100% 3%;
     --popover-foreground: 210 20% 95%;
 
-    --primary: 280 100% 65%;
+    /* Brand */
+    /* Primary purple approximates #6344DF -> hsl(252 71% 57%) */
+    --primary: 252 71% 57%;
     --primary-foreground: 0 0% 100%;
 
+    /* Elevated surfaces / neutrals */
     --secondary: 225 15% 12%;
     --secondary-foreground: 210 20% 95%;
 
     --muted: 225 15% 12%;
     --muted-foreground: 215 15% 65%;
 
-    --accent: 180 100% 50%;
+    /* Accents */
+    --accent: 188 100% 50%;
     --accent-foreground: 225 100% 3%;
 
     --destructive: 0 84% 60%;
@@ -39,110 +44,351 @@ All colors MUST be HSL.
     --warning: 38 92% 60%;
     --warning-foreground: 225 100% 3%;
 
+    /* Form & ring */
     --border: 225 20% 15%;
     --input: 225 20% 8%;
-    --ring: 180 100% 50%;
+    --ring: 188 100% 50%;
 
     --radius: 1rem;
 
-    /* OriginTrail Brand Colors */
-    --origin-purple: 280 100% 65%;
-    --origin-cyan: 180 100% 50%;
+    /* Brand tokens (explicit) */
+    --origin-purple: 252 71% 57%;
+    --origin-cyan: 188 100% 50%;
     --origin-teal: 170 100% 45%;
-    --neural-glow: 280 100% 65%;
 
-    /* Chart Colors */
-    --chart-1: 280 100% 65%;
-    --chart-2: 180 100% 50%;
-    --chart-3: 170 100% 45%;
-    --chart-4: 142 76% 50%;
-    --chart-5: 0 84% 60%;
+    /* Site-style aliases used in their markup */
+    --color-primary: hsl(var(--origin-purple));
+    --color-white: hsl(0 0% 100%);
+    --color-dark-grey: hsl(var(--secondary));
+    --color-dark-white: hsl(210 20% 92%);
+    --color-background-darker: hsl(225 100% 2%);
+    --color-dark-solid: hsl(225 100% 3%);
 
-    /* Advanced Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(280 100% 65% / 0.9), hsl(180 100% 50% / 0.7));
-    --gradient-neural: linear-gradient(135deg, hsl(280 100% 65% / 0.3), hsl(180 100% 50% / 0.2), hsl(170 100% 45% / 0.1));
-    --gradient-card: linear-gradient(135deg, hsl(225 20% 15% / 0.4), hsl(225 25% 8% / 0.2));
-    --gradient-glass: linear-gradient(135deg, hsl(225 20% 25% / 0.1), hsl(225 30% 15% / 0.05));
-    --gradient-border: linear-gradient(135deg, hsl(280 100% 65% / 0.4), hsl(180 100% 50% / 0.3));
+    /* Gradients (OriginTrail vibe) */
+    --gradient-primary: linear-gradient(
+            135deg,
+            hsl(var(--origin-purple) / 0.95),
+            hsl(var(--origin-cyan) / 0.75)
+    );
+    --gradient-neural: radial-gradient(
+            80% 120% at 10% 20%,
+            hsl(var(--origin-purple) / 0.20),
+            transparent 60%
+    ),
+    radial-gradient(
+            120% 100% at 80% 10%,
+            hsl(var(--origin-cyan) / 0.18),
+            transparent 60%
+    ),
+    radial-gradient(
+            100% 120% at 40% 90%,
+            hsl(var(--origin-teal) / 0.14),
+            transparent 60%
+    );
+    --gradient-card: linear-gradient(
+            135deg,
+            hsl(225 22% 14% / 0.45),
+            hsl(225 28% 9% / 0.25)
+    );
+    --gradient-glass: linear-gradient(
+            135deg,
+            hsl(225 20% 25% / 0.10),
+            hsl(225 30% 15% / 0.05)
+    );
+    --gradient-border: linear-gradient(
+            135deg,
+            hsl(var(--origin-purple) / 0.45),
+            hsl(var(--origin-cyan) / 0.35)
+    );
 
-    /* Enhanced Shadows & Effects */
-    --shadow-neural: 0 0 60px hsl(280 100% 65% / 0.4), 0 0 120px hsl(180 100% 50% / 0.2);
-    --shadow-glass: 0 8px 32px hsl(225 100% 3% / 0.8), inset 0 1px 0 hsl(225 20% 25% / 0.3);
-    --shadow-card: 0 20px 60px hsl(225 100% 3% / 0.9), 0 8px 25px hsl(225 100% 3% / 0.5);
-    --shadow-input: inset 0 2px 10px hsl(225 20% 8% / 0.8), 0 0 0 1px hsl(225 20% 15% / 0.5);
+    /* Shadows / glow */
+    --shadow-neural:
+            0 0 60px hsl(var(--origin-purple) / 0.40),
+            0 0 120px hsl(var(--origin-cyan) / 0.20);
+    --shadow-glass:
+            0 8px 32px hsl(225 100% 3% / 0.80),
+            inset 0 1px 0 hsl(225 20% 25% / 0.30);
+    --shadow-card:
+            0 20px 60px hsl(225 100% 3% / 0.90),
+            0 8px 25px hsl(225 100% 3% / 0.50);
+    --shadow-input:
+            inset 0 2px 10px hsl(225 20% 8% / 0.80),
+            0 0 0 1px hsl(225 20% 15% / 0.50);
 
-    /* Smooth Animations */
+    /* Motion */
     --transition-glass: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     --transition-neural: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    /* Dark mode uses same colors */
+    /* Keep dark tokens aligned with base */
     --background: 224 71% 4%;
     --foreground: 213 31% 91%;
+
     --card: 224 71% 4%;
     --card-foreground: 213 31% 91%;
+
     --popover: 224 71% 4%;
     --popover-foreground: 213 31% 91%;
-    --primary: 263 70% 50%;
+
+    --primary: 252 71% 57%;
     --primary-foreground: 210 40% 98%;
+
     --secondary: 215 25% 27%;
     --secondary-foreground: 213 31% 91%;
+
     --muted: 215 25% 27%;
     --muted-foreground: 217 10% 65%;
-    --accent: 263 70% 50%;
+
+    --accent: 252 71% 57%;
     --accent-foreground: 210 40% 98%;
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+
     --border: 215 25% 15%;
     --input: 215 25% 15%;
-    --ring: 263 70% 50%;
+    --ring: 252 71% 57%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground font-inter antialiased;
-    background-image: 
-      radial-gradient(at 20% 50%, hsl(280 100% 65% / 0.08) 0px, transparent 50%),
-      radial-gradient(at 80% 20%, hsl(180 100% 50% / 0.06) 0px, transparent 50%),
-      radial-gradient(at 40% 80%, hsl(170 100% 45% / 0.04) 0px, transparent 50%);
+    /* page background with subtle brand blobs */
+    background-image:
+            radial-gradient(at 20% 50%, hsl(var(--origin-purple) / 0.08) 0px, transparent 50%),
+            radial-gradient(at 80% 20%, hsl(var(--origin-cyan) / 0.06) 0px, transparent 50%),
+            radial-gradient(at 40% 80%, hsl(var(--origin-teal) / 0.04) 0px, transparent 50%),
+            var(--gradient-neural);
+    background-color: hsl(var(--background));
+    background-attachment: fixed;
   }
 
-  /* Glass morphism utilities */
+  /* Glass morphism */
   .glass {
-    @apply backdrop-blur-xl bg-gradient-glass border border-border/30;
+    backdrop-filter: blur(16px);
+    background: var(--gradient-glass);
+    border: 1px solid hsl(var(--border) / 0.30);
     box-shadow: var(--shadow-glass);
+    transition: var(--transition-glass);
   }
 
   .glass-card {
-    @apply backdrop-blur-xl bg-gradient-card border border-border/20;
+    backdrop-filter: blur(12px);
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--border) / 0.20);
     box-shadow: var(--shadow-card);
+    transition: var(--transition-glass);
   }
 
   .neural-glow {
-    filter: drop-shadow(0 0 20px hsl(var(--origin-purple) / 0.5));
+    filter: drop-shadow(0 0 20px hsl(var(--origin-purple) / 0.50))
+    drop-shadow(0 0 36px hsl(var(--origin-cyan) / 0.35));
   }
 
   /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-background/50;
-  }
-
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background) / 0.50); }
   ::-webkit-scrollbar-thumb {
-    @apply bg-gradient-primary rounded-full;
+    background: var(--gradient-primary);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary)); }
+}
+
+/* === OriginTrail Style Kit (drop in index.css) ========================== */
+@layer components {
+  /* gradient text like origintrail hero */
+  .ot-gradient-text { @apply bg-gradient-primary bg-clip-text text-transparent; }
+
+  /* primary button */
+  .ot-btn {
+    @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5
+    font-semibold bg-primary text-primary-foreground
+    hover:bg-primary/90 transition-[background,box-shadow] duration-300;
+    box-shadow: var(--shadow-card);
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary;
+  /* ghost/outline button */
+  .ot-btn-outline {
+    @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5
+    border border-border text-foreground hover:bg-secondary/60
+    transition-colors;
+  }
+
+  /* card surface */
+  .ot-card {
+    @apply rounded-2xl border border-border/60 bg-card/70 p-6;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* input field */
+  .ot-input {
+    @apply w-full rounded-xl border border-border bg-input
+    text-foreground placeholder:text-muted-foreground/70
+    px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring;
+    box-shadow: var(--shadow-input);
+  }
+
+  /* subtle badge/chip */
+  .ot-badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs
+    border border-border/60 bg-secondary/50 text-secondary-foreground;
+  }
+
+  /* simple gradient border (no masks, very robust) */
+  .ot-border-gradient {
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background:
+            linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
+            linear-gradient(135deg, hsl(var(--origin-purple)), hsl(var(--origin-cyan))) border-box;
+    background-clip: padding-box, border-box; /* opcionalno, utiša lintere */
+  }
+}
+
+/* ---------- Components that match the site ---------- */
+@layer components {
+  /* Pill button (purple → cyan), like their CTA */
+  .btn {
+    @apply inline-flex items-center gap-2 px-5 py-3 rounded-full font-medium transition;
+    @apply select-none;
+  }
+  .btn-primary {
+    background: var(--gradient-primary);
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 8px 24px hsl(var(--origin-purple) / 0.35);
+  }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .btn-primary:active { transform: translateY(1px); }
+
+  .btn-secondary {
+    @apply border;
+    background: hsl(var(--secondary));
+    border-color: hsl(var(--border) / 0.5);
+    color: hsl(var(--foreground));
+  }
+
+  /* Divider like the hero "Trust the Source" card */
+  .ot-divider {
+    height: 1px;
+    background: var(--gradient-border);
+    border: 0;
+  }
+
+  /* Card shells */
+  .ot-card {
+    @apply rounded-2xl p-6;
+    background: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border: 1px solid hsl(var(--border) / 0.35);
+    box-shadow: var(--shadow-card);
+  }
+  .ot-card-glass { @apply rounded-2xl p-6; @apply glass-card; }
+
+  /* Stat chip (used near TRAC total / counters) */
+  .stat-chip {
+    @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm;
+    background: hsl(var(--secondary) / 0.75);
+    border: 1px solid hsl(var(--border) / 0.45);
+    color: hsl(var(--foreground));
+  }
+
+  /* Headings with subtle gradient text option */
+  .heading-gradient {
+    background: linear-gradient(
+            180deg,
+            hsl(var(--foreground)) 0%,
+            hsl(var(--foreground) / 0.85) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Inputs styled like the contact form */
+  .ot-input, .ot-textarea, .ot-select {
+    @apply w-full rounded-xl outline-none;
+    @apply px-4 py-3 text-sm;
+    background: hsl(var(--input));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: var(--shadow-input);
+    transition: var(--transition-smooth);
+  }
+  .ot-textarea { @apply min-h-[120px]; resize: vertical; }
+  .ot-input::placeholder,
+  .ot-textarea::placeholder { color: hsl(var(--muted-foreground)); }
+  .ot-input:focus, .ot-textarea:focus, .ot-select:focus {
+    border-color: hsl(var(--ring));
+    box-shadow:
+            0 0 0 3px hsl(var(--ring) / 0.25),
+            inset 0 2px 10px hsl(225 20% 8% / 0.9);
+  }
+
+  /* Chip row like "Internet safety" tag over hero image */
+  .ot-chip {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium;
+    background: hsl(var(--secondary) / 0.7);
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border) / 0.45);
+  }
+
+  /* Carousel image overlay darkness */
+  .ot-image-dim { filter: brightness(0.6); transition: filter 0.4s; }
+  .ot-image-dim:hover { filter: brightness(0.8); }
+}
+
+/* ---------- Utilities to mirror site patterns ---------- */
+@layer utilities {
+  /* Background shortcuts */
+  .bg-gradient-primary { background-image: var(--gradient-primary); }
+  .bg-gradient-card { background-image: var(--gradient-card); }
+  .bg-gradient-glass { background-image: var(--gradient-glass); }
+  .bg-neural { background-image: var(--gradient-neural); }
+
+  /* Outline / ring glow used on focus items */
+  .ring-neural {
+    box-shadow:
+            0 0 0 2px hsl(var(--origin-cyan) / 0.40),
+            0 0 30px hsl(var(--origin-purple) / 0.35);
+  }
+
+  /* Big pill radius used everywhere */
+  .rounded-pill { border-radius: 999px; }
+
+  /* Soft hover lift */
+  .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px hsl(225 100% 2% / 0.6);
+  }
+
+  /* Subtle white for icons over dark buttons (matches their arrow icon color) */
+  .text-dark-white { color: var(--color-dark-white); }
+
+  /* Border gradient mask utility (for fancy card borders) */
+  .border-gradient {
+    position: relative;
+  }
+
+  /* Simple gradient border (no mask properties) */
+  .border-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;                 /* border thickness */
+    border: 1px solid transparent;
+    background:
+      /* inner fill */
+            linear-gradient(hsl(var(--background)), hsl(var(--background))) padding-box,
+              /* outer ring */
+            var(--gradient-border) border-box;
+    pointer-events: none;
   }
 }
