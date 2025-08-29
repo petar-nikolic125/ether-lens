@@ -55,78 +55,60 @@ export const SearchForm = ({ onSearch }: SearchFormProps) => {
   };
 
   return (
-      <div className="ot-card-glass rounded-3xl p-8 hover-lift ot-border-gradient">
-        {/* Heading */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Sparkles className="w-6 h-6 text-origin-purple animate-glow" />
-            <h2 className="text-2xl font-bold font-space ot-gradient-text">
-              Neural Transaction Analysis
-            </h2>
-            <Sparkles className="w-6 h-6 text-origin-cyan animate-glow" style={{ animationDelay: "1s" }} />
-          </div>
-          <p className="text-muted-foreground font-inter">
-            Enter wallet address and starting block to begin exploration
-          </p>
-        </div>
-
+      <div className="ot-card rounded-2xl p-6 hover-lift">
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Address */}
-            <div className="lg:col-span-2 space-y-3">
-              <label htmlFor="address" className="text-sm font-medium flex items-center gap-2 font-space">
-                <Wallet className="w-4 h-4 text-origin-purple" />
-                Ethereum Wallet Address
+            <div className="lg:col-span-2">
+              <label htmlFor="address" className="block text-sm font-medium mb-2 font-space">
+                Ethereum Address
               </label>
-              <Input
+              <input
                   id="address"
                   type="text"
-                  placeholder="0xaa7a9ca87d3694b5755f213b5d04094b8d0f0a6f"
+                  placeholder="Search by Address / Txn Hash / Block / Token"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="ot-input h-12 text-base"
+                  className="ot-input h-11 text-sm w-full"
               />
-              <p className="text-xs text-muted-foreground/80">Address to analyze</p>
             </div>
 
             {/* Start block */}
-            <div className="space-y-3">
-              <label htmlFor="startBlock" className="text-sm font-medium flex items-center gap-2 font-space">
-                <Hash className="w-4 h-4 text-origin-cyan" />
+            <div>
+              <label htmlFor="startBlock" className="block text-sm font-medium mb-2 font-space">
                 Starting Block
               </label>
-              <Input
+              <input
                   id="startBlock"
                   type="text"
                   placeholder="9000000"
                   value={startBlock}
                   onChange={(e) => setStartBlock(e.target.value)}
-                  className="ot-input h-12 text-base"
+                  className="ot-input h-11 text-sm w-full"
               />
-              <p className="text-xs text-muted-foreground/80">Block number where analysis begins</p>
             </div>
           </div>
 
           {/* Submit */}
-          <div className="flex justify-center">
-            <Button
+          <div className="flex justify-start">
+            <button
                 type="submit"
                 disabled={isLoading}
-                className="btn btn-primary rounded-pill px-10 py-4 text-lg font-semibold font-space disabled:opacity-50"
+                className="btn btn-primary px-6 py-2 text-sm disabled:opacity-50"
             >
               {isLoading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    <span className="ml-2">Neural Analysis in Progress…</span>
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                    Searching...
                   </>
               ) : (
                   <>
-                    <Search className="w-5 h-5 mr-2" />
-                    Begin Neural Analysis
+                    <Search className="w-4 h-4 mr-2" />
+                    Search
                   </>
               )}
-            </Button>
+            </button>
           </div>
         </form>
       </div>
