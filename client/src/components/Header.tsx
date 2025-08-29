@@ -36,7 +36,7 @@ export const Header: React.FC = () => {
               <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">OT</span>
               </div>
-              <span className="font-space font-bold text-xl text-foreground">Etherscan</span>
+              <span className="font-space font-bold text-xl text-foreground">OriginTrail Explorer</span>
             </div>
 
             {/* Navigation links */}
@@ -103,7 +103,7 @@ export const Header: React.FC = () => {
       {/* Breadcrumb */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="py-3 border-t border-border/10">
-          <h1 className="text-2xl font-bold font-space text-foreground">The Ethereum Blockchain Explorer</h1>
+          <h1 className="text-2xl font-bold font-space text-foreground">Ethereum Transaction Crawler</h1>
         </div>
       </div>
     </header>
