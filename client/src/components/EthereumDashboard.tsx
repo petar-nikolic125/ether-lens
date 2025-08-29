@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 interface StatCard {
   title: string;
@@ -13,7 +14,6 @@ interface Block {
   miner: string;
   txCount: number;
   gasUsed: string;
-  reward: string;
   timeAgo: string;
 }
 
@@ -26,132 +26,53 @@ interface Transaction {
 }
 
 export const EthereumDashboard: React.FC = () => {
-  const [stats, setStats] = useState<StatCard[]>([
-    {
-      title: "ETHER PRICE",
-      value: "$4,343.44",
-      change: "0.040749 BTC (-1.18%)",
-      changeType: "negative"
+  // Fetch network stats with auto-refresh every 30 seconds
+  const { data: statsData } = useQuery({
+    queryKey: ['network-stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/network-stats');
+      if (!response.ok) throw new Error('Failed to fetch network stats');
+      return response.json();
     },
-    {
-      title: "TRANSACTIONS",
-      value: "2,966.43 M",
-      subtitle: "(20.0 TPS)"
-    },
-    {
-      title: "MED GAS PRICE",
-      value: "0.308 Gwei",
-      subtitle: "($0.05)"
-    },
-    {
-      title: "MARKET CAP",
-      value: "$526,696,481,689.00"
-    },
-    {
-      title: "LAST FINALIZED BLOCK",
-      value: "23249569"
-    },
-    {
-      title: "LAST SAFE BLOCK",
-      value: "23249701"
-    }
-  ]);
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
-  const [latestBlocks, setLatestBlocks] = useState<Block[]>([
-    {
-      number: "23249745",
-      miner: "Builder0x69",
-      txCount: 159,
-      gasUsed: "0.009556 Eth",
-      reward: "17 secs ago",
-      timeAgo: "17 secs ago"
+  // Fetch latest blocks with auto-refresh every 15 seconds
+  const { data: blocksData } = useQuery({
+    queryKey: ['latest-blocks'],
+    queryFn: async () => {
+      const response = await fetch('/api/latest-blocks');
+      if (!response.ok) throw new Error('Failed to fetch latest blocks');
+      return response.json();
     },
-    {
-      number: "23249744",
-      miner: "Titan Builder",
-      txCount: 189,
-      gasUsed: "0.009564 Eth",
-      reward: "29 secs ago",
-      timeAgo: "29 secs ago"
-    },
-    {
-      number: "23249743",
-      miner: "Titan Builder",
-      txCount: 290,
-      gasUsed: "0.011446 Eth",
-      reward: "41 secs ago",
-      timeAgo: "41 secs ago"
-    },
-    {
-      number: "23249742",
-      miner: "MEV Builder: 0x88...",
-      txCount: 87,
-      gasUsed: "0.004536 Eth",
-      reward: "53 secs ago",
-      timeAgo: "53 secs ago"
-    },
-    {
-      number: "23249741",
-      miner: "beaverbuild",
-      txCount: 390,
-      gasUsed: "0.007556 Eth",
-      reward: "1 min ago",
-      timeAgo: "1 min ago"
-    },
-    {
-      number: "23249740",
-      miner: "Titan Builder",
-      txCount: 328,
-      gasUsed: "0.013382 Eth",
-      reward: "1 min ago",
-      timeAgo: "1 min ago"
-    }
-  ]);
+    refetchInterval: 15000, // Refresh every 15 seconds
+  });
 
-  const [latestTransactions, setLatestTransactions] = useState<Transaction[]>([
-    {
-      hash: "0xfae5f40db25a...24f783711",
-      from: "0xda60d94588e4...5107821657",
-      to: "0xd0CE8E3E1d5...9f9C40C07",
-      value: "0.008677 Eth",
-      timeAgo: "17 secs ago"
+  // Fetch latest transactions with auto-refresh every 15 seconds
+  const { data: transactionsData } = useQuery({
+    queryKey: ['latest-transactions'],
+    queryFn: async () => {
+      const response = await fetch('/api/latest-transactions');
+      if (!response.ok) throw new Error('Failed to fetch latest transactions');
+      return response.json();
     },
-    {
-      hash: "0x943b3b06de0...24f783711",
-      from: "0xda60d94588e4...5107821657",
-      to: "0xd0CE8E8426...9f9C40C07",
-      value: "0.003333 Eth",
-      timeAgo: "17 secs ago"
-    },
-    {
-      hash: "0x11ad610f7f6...CFC4fae0f",
-      from: "0xda60d94588e4...24f783711",
-      to: "0xe71a93a27...CFC4fae0f",
-      value: "0.002564 Eth",
-      timeAgo: "17 secs ago"
-    },
-    {
-      hash: "0x80051541f...4b835227A7",
-      from: "0xda60d94588e4...24f783711",
-      to: "0x01616e9a0...4b835227A7",
-      value: "0.000095 Eth",
-      timeAgo: "17 secs ago"
-    },
-    {
-      hash: "0x6c2a5ea06ff...5275c5892",
-      from: "0xf4903Ce6...5a6f0203b5",
-      to: "0x67D1536E8...5275c5892",
-      value: "0.007919 Eth",
-      timeAgo: "17 secs ago"
-    },
-    {
-      hash: "0x024de4243...0c2252C490",
-      from: "0xf5F906EF2...c726bc597",
-      to: "0x50F31855...0c2252C490",
-      value: "0.000091 Eth",
-      timeAgo: "17 secs ago"
-    }
-  ]);
+    refetchInterval: 15000, // Refresh every 15 seconds
+  });
+
+  const stats = statsData?.stats || [
+    { title: "LOADING...", value: "Fetching live data..." },
+    { title: "NETWORK", value: "Ethereum Mainnet" },
+    { title: "STATUS", value: "Connecting..." },
+    { title: "API", value: "Etherscan" },
+    { title: "REFRESH", value: "Auto 30s" },
+    { title: "DATA", value: "Real-time" }
+  ];
+
+  const latestBlocks = blocksData?.blocks || [];
+  const latestTransactions = transactionsData?.transactions || [];
+
+  const formatAddress = (address: string) => 
+    `${address.slice(0, 6)}...${address.slice(-4)}`;
 
   return (
     <div className="bg-background min-h-screen">
@@ -204,42 +125,52 @@ export const EthereumDashboard: React.FC = () => {
           {/* Latest Blocks */}
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">Latest Blocks</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">Latest Blocks</h3>
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span className="text-xs text-green-400 font-medium">LIVE</span>
+              </div>
               <button className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                ⚙️ Customize
+                🔄 Auto-refresh 15s
               </button>
             </div>
             <div className="divide-y divide-border">
-              {latestBlocks.map((block, index) => (
-                <div key={index} className="p-4 hover:bg-muted/30 transition-colors">
+              {latestBlocks.length > 0 ? latestBlocks.map((block, index) => (
+                <div key={block.number || index} className="p-4 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">📦</span>
+                    <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                      <span className="text-xs text-primary-foreground">📦</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-foreground font-mono">
-                          {block.number}
+                          {parseInt(block.number).toLocaleString()}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-green-400">
                           {block.timeAgo}
                         </span>
+                        <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Miner <span className="text-foreground">{block.miner}</span>
+                        Miner <span className="text-foreground">{formatAddress(block.miner)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {block.txCount} txns in 12 secs
+                        {block.txCount} txns in block
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs font-medium text-foreground font-mono">
-                        {block.gasUsed}
+                        {block.gasUsed} ETH
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="p-4 text-center text-muted-foreground">
+                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                  Loading live blocks...
+                </div>
+              )}
             </div>
             <div className="p-4 border-t border-border">
               <button className="text-sm text-primary hover:text-primary/80 transition-colors font-medium">
@@ -251,42 +182,52 @@ export const EthereumDashboard: React.FC = () => {
           {/* Latest Transactions */}
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">Latest Transactions</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">Latest Transactions</h3>
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span className="text-xs text-green-400 font-medium">LIVE</span>
+              </div>
               <button className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                ⚙️ Customize
+                🔄 Auto-refresh 15s
               </button>
             </div>
             <div className="divide-y divide-border">
-              {latestTransactions.map((tx, index) => (
-                <div key={index} className="p-4 hover:bg-muted/30 transition-colors">
+              {latestTransactions.length > 0 ? latestTransactions.map((tx, index) => (
+                <div key={tx.hash || index} className="p-4 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">📄</span>
+                    <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                      <span className="text-xs text-primary-foreground">📄</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium text-foreground font-mono truncate">
-                          {tx.hash}
+                          {formatAddress(tx.hash)}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-green-400">
                           {tx.timeAgo}
                         </span>
+                        <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        From <span className="text-foreground font-mono">{tx.from}</span>
+                        From <span className="text-foreground font-mono">{formatAddress(tx.from)}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        To <span className="text-foreground font-mono">{tx.to}</span>
+                        To <span className="text-foreground font-mono">{formatAddress(tx.to)}</span>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs font-medium text-foreground font-mono">
-                        {tx.value}
+                        {tx.value} ETH
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="p-4 text-center text-muted-foreground">
+                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                  Loading live transactions...
+                </div>
+              )}
             </div>
             <div className="p-4 border-t border-border">
               <button className="text-sm text-primary hover:text-primary/80 transition-colors font-medium">

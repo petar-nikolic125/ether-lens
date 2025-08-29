@@ -5,8 +5,8 @@ import { z } from "zod";
 
 // Etherscan API service
 class EtherscanService {
-  private baseUrl = "https://api.etherscan.io/api";
-  private apiKey = process.env.ETHERSCAN_API_KEY;
+  public baseUrl = "https://api.etherscan.io/api";
+  public apiKey = process.env.ETHERSCAN_API_KEY;
 
   async getTransactions(address: string, startBlock: number = 0, endBlock: number = 99999999) {
     const url = `${this.baseUrl}?module=account&action=txlist&address=${address}&startblock=${startBlock}&endblock=${endBlock}&page=1&offset=1000&sort=desc&apikey=${this.apiKey}`;
@@ -250,6 +250,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching token transfers:", error);
       res.status(500).json({ error: "Failed to fetch token transfers" });
+    }
+  });
+
+  // Get latest blocks
+  app.get("/api/latest-blocks", async (req, res) => {
+    try {
+      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      const latestBlockNumber = parseInt(data.result, 16);
+      const blocks = [];
+      
+      // Get last 6 blocks
+      for (let i = 0; i < 6; i++) {
+        const blockNumber = latestBlockNumber - i;
+        const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+        const blockResponse = await fetch(blockUrl);
+        const blockData = await blockResponse.json();
+        
+        if (blockData.result) {
+          const block = blockData.result;
+          const now = Date.now();
+          const blockTime = parseInt(block.timestamp, 16) * 1000;
+          const timeAgo = Math.floor((now - blockTime) / 1000);
+          
+          blocks.push({
+            number: parseInt(block.number, 16).toString(),
+            miner: block.miner,
+            txCount: block.transactions.length,
+            gasUsed: (parseInt(block.gasUsed, 16) / 1e18).toFixed(6),
+            timeAgo: timeAgo < 60 ? `${timeAgo} secs ago` : `${Math.floor(timeAgo / 60)} min ago`
+          });
+        }
+      }
+      
+      res.json({ blocks });
+    } catch (error) {
+      console.error("Error fetching latest blocks:", error);
+      res.status(500).json({ error: "Failed to fetch latest blocks" });
+    }
+  });
+
+  // Get latest transactions
+  app.get("/api/latest-transactions", async (req, res) => {
+    try {
+      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      const latestBlockNumber = parseInt(data.result, 16);
+      const transactions = [];
+      
+      // Get transactions from the latest block
+      const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${latestBlockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+      const blockResponse = await fetch(blockUrl);
+      const blockData = await blockResponse.json();
+      
+      if (blockData.result && blockData.result.transactions) {
+        const blockTransactions = blockData.result.transactions.slice(0, 6);
+        const now = Date.now();
+        const blockTime = parseInt(blockData.result.timestamp, 16) * 1000;
+        const timeAgo = Math.floor((now - blockTime) / 1000);
+        
+        for (const tx of blockTransactions) {
+          if (tx.value && parseInt(tx.value, 16) > 0) {
+            transactions.push({
+              hash: tx.hash,
+              from: tx.from,
+              to: tx.to,
+              value: (parseInt(tx.value, 16) / 1e18).toFixed(6),
+              timeAgo: timeAgo < 60 ? `${timeAgo} secs ago` : `${Math.floor(timeAgo / 60)} min ago`
+            });
+            
+            if (transactions.length >= 6) break;
+          }
+        }
+      }
+      
+      res.json({ transactions });
+    } catch (error) {
+      console.error("Error fetching latest transactions:", error);
+      res.status(500).json({ error: "Failed to fetch latest transactions" });
+    }
+  });
+
+  // Get network stats
+  app.get("/api/network-stats", async (req, res) => {
+    try {
+      // Get ETH price from a public API
+      const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+      const priceData = await priceResponse.json();
+      const ethPrice = priceData.ethereum?.usd || 0;
+      
+      // Get latest block
+      const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+      const blockResponse = await fetch(blockUrl);
+      const blockData = await blockResponse.json();
+      const latestBlock = parseInt(blockData.result, 16);
+      
+      // Get gas price
+      const gasUrl = `${etherscanService.baseUrl}?module=gastracker&action=gasoracle&apikey=${etherscanService.apiKey}`;
+      const gasResponse = await fetch(gasUrl);
+      const gasData = await gasResponse.json();
+      
+      const stats = [
+        {
+          title: "ETHER PRICE",
+          value: `$${ethPrice.toFixed(2)}`,
+          change: "Live data",
+          changeType: "positive"
+        },
+        {
+          title: "LATEST BLOCK",
+          value: latestBlock.toLocaleString(),
+          subtitle: "Live"
+        },
+        {
+          title: "GAS PRICE",
+          value: gasData.result?.StandardGasPrice ? `${gasData.result.StandardGasPrice} Gwei` : "Loading...",
+          subtitle: "Standard"
+        },
+        {
+          title: "NETWORK",
+          value: "Ethereum Mainnet"
+        },
+        {
+          title: "CONFIRMATIONS",
+          value: "12 blocks"
+        },
+        {
+          title: "STATUS",
+          value: "Live"
+        }
+      ];
+      
+      res.json({ stats });
+    } catch (error) {
+      console.error("Error fetching network stats:", error);
+      res.status(500).json({ error: "Failed to fetch network stats" });
     }
   });
 
