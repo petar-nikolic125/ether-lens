@@ -60,12 +60,12 @@ export const EthereumDashboard: React.FC = () => {
   });
 
   const stats = statsData?.stats || [
-    { title: "LOADING...", value: "Fetching live data..." },
+    { title: "ETHER PRICE", value: "Loading...", change: "Fetching data...", changeType: "neutral" },
+    { title: "LATEST BLOCK", value: "Loading...", subtitle: "Live" },
+    { title: "GAS PRICE", value: "Loading...", subtitle: "Standard" },
     { title: "NETWORK", value: "Ethereum Mainnet" },
-    { title: "STATUS", value: "Connecting..." },
-    { title: "API", value: "Etherscan" },
-    { title: "REFRESH", value: "Auto 30s" },
-    { title: "DATA", value: "Real-time" }
+    { title: "CONFIRMATIONS", value: "12 blocks" },
+    { title: "STATUS", value: "Connecting..." }
   ];
 
   const latestBlocks = blocksData?.blocks || [];

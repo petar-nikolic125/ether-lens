@@ -262,42 +262,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = await fetch(url);
       const data = await response.json();
       
+      if (!data.result) {
+        return res.json({ blocks: [] });
+      }
+      
       const latestBlockNumber = parseInt(data.result, 16);
       const blocks = [];
       
-      // Get last 6 blocks
+      if (isNaN(latestBlockNumber)) {
+        return res.json({ blocks: [] });
+      }
+      
+      // Get last 6 blocks with proper error handling
       for (let i = 0; i < 6; i++) {
-        const blockNumber = latestBlockNumber - i;
-        const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
-        const blockResponse = await fetch(blockUrl);
-        const blockData = await blockResponse.json();
-        
-        if (blockData.result && blockData.result.number && blockData.result.timestamp) {
-          const block = blockData.result;
-          const now = Date.now();
-          const blockTime = parseInt(block.timestamp, 16) * 1000;
-          const timeAgo = Math.floor((now - blockTime) / 1000);
+        try {
+          const blockNumber = latestBlockNumber - i;
+          const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+          const blockResponse = await fetch(blockUrl);
+          const blockData = await blockResponse.json();
           
-          // Ensure we have valid data before processing
-          const blockNumber = parseInt(block.number, 16);
-          const gasUsed = parseInt(block.gasUsed, 16);
-          
-          if (!isNaN(blockNumber) && !isNaN(gasUsed)) {
-            blocks.push({
-              number: blockNumber.toString(),
-              miner: block.miner || "Unknown",
-              txCount: block.transactions ? block.transactions.length : 0,
-              gasUsed: (gasUsed / 1e18).toFixed(6),
-              timeAgo: timeAgo < 60 ? `${timeAgo} secs ago` : `${Math.floor(timeAgo / 60)} min ago`
-            });
+          if (blockData.result && blockData.result.number && blockData.result.timestamp && blockData.result.gasUsed) {
+            const block = blockData.result;
+            const now = Date.now();
+            const blockTime = parseInt(block.timestamp, 16) * 1000;
+            const timeAgo = Math.floor((now - blockTime) / 1000);
+            
+            // Parse values with validation
+            const parsedBlockNumber = parseInt(block.number, 16);
+            const parsedGasUsed = parseInt(block.gasUsed, 16);
+            const parsedTimestamp = parseInt(block.timestamp, 16);
+            
+            // Only add if all values are valid
+            if (!isNaN(parsedBlockNumber) && !isNaN(parsedGasUsed) && !isNaN(parsedTimestamp) && parsedTimestamp > 0) {
+              // Format gas used properly (in millions for readability)
+              const gasUsedFormatted = (parsedGasUsed / 1000000).toFixed(2) + "M";
+              
+              blocks.push({
+                number: parsedBlockNumber.toString(),
+                miner: block.miner || "Unknown",
+                txCount: Array.isArray(block.transactions) ? block.transactions.length : 0,
+                gasUsed: gasUsedFormatted,
+                timeAgo: timeAgo < 60 ? `${timeAgo} secs ago` : `${Math.floor(timeAgo / 60)} min ago`
+              });
+            }
           }
+        } catch (blockError) {
+          console.warn(`Failed to fetch block ${latestBlockNumber - i}:`, blockError);
+          // Continue to next block instead of failing completely
         }
       }
       
       res.json({ blocks });
     } catch (error) {
       console.error("Error fetching latest blocks:", error);
-      res.status(500).json({ error: "Failed to fetch latest blocks" });
+      res.json({ blocks: [] }); // Return empty array instead of error
     }
   });
 
@@ -308,76 +326,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = await fetch(url);
       const data = await response.json();
       
+      if (!data.result) {
+        return res.json({ transactions: [] });
+      }
+      
       const latestBlockNumber = parseInt(data.result, 16);
       const transactions = [];
       
-      // Get transactions from the latest block
-      const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${latestBlockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
-      const blockResponse = await fetch(blockUrl);
-      const blockData = await blockResponse.json();
+      if (isNaN(latestBlockNumber)) {
+        return res.json({ transactions: [] });
+      }
       
-      if (blockData.result && blockData.result.transactions) {
-        const blockTransactions = blockData.result.transactions.slice(0, 6);
-        const now = Date.now();
-        const blockTime = parseInt(blockData.result.timestamp, 16) * 1000;
-        const timeAgo = Math.floor((now - blockTime) / 1000);
-        
-        for (const tx of blockTransactions) {
-          if (tx.value && parseInt(tx.value, 16) > 0) {
-            transactions.push({
-              hash: tx.hash,
-              from: tx.from,
-              to: tx.to,
-              value: (parseInt(tx.value, 16) / 1e18).toFixed(6),
-              timeAgo: timeAgo < 60 ? `${timeAgo} secs ago` : `${Math.floor(timeAgo / 60)} min ago`
-            });
+      // Search through multiple recent blocks to find transactions
+      for (let blockOffset = 0; blockOffset < 5 && transactions.length < 6; blockOffset++) {
+        try {
+          const blockNumber = latestBlockNumber - blockOffset;
+          const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+          const blockResponse = await fetch(blockUrl);
+          const blockData = await blockResponse.json();
+          
+          if (blockData.result && Array.isArray(blockData.result.transactions) && blockData.result.timestamp) {
+            const blockTransactions = blockData.result.transactions;
+            const now = Date.now();
+            const blockTime = parseInt(blockData.result.timestamp, 16) * 1000;
+            const timeAgo = Math.floor((now - blockTime) / 1000);
             
-            if (transactions.length >= 6) break;
+            for (const tx of blockTransactions) {
+              if (tx.hash && tx.from && tx.to && tx.value) {
+                const valueWei = parseInt(tx.value, 16);
+                if (valueWei > 0) {
+                  const valueEth = (valueWei / 1e18);
+                  
+                  transactions.push({
+                    hash: tx.hash,
+                    from: tx.from,
+                    to: tx.to,
+                    value: valueEth.toFixed(6),
+                    timeAgo: timeAgo < 60 ? `${timeAgo} secs ago` : `${Math.floor(timeAgo / 60)} min ago`
+                  });
+                  
+                  if (transactions.length >= 6) break;
+                }
+              }
+            }
           }
+        } catch (blockError) {
+          console.warn(`Failed to fetch transactions from block ${latestBlockNumber - blockOffset}:`, blockError);
         }
       }
       
       res.json({ transactions });
     } catch (error) {
       console.error("Error fetching latest transactions:", error);
-      res.status(500).json({ error: "Failed to fetch latest transactions" });
+      res.json({ transactions: [] }); // Return empty array instead of error
     }
   });
 
   // Get network stats
   app.get("/api/network-stats", async (req, res) => {
     try {
-      // Get ETH price from a public API
-      const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-      const priceData = await priceResponse.json();
-      const ethPrice = priceData.ethereum?.usd || 0;
-      
-      // Get latest block
-      const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
-      const blockResponse = await fetch(blockUrl);
-      const blockData = await blockResponse.json();
-      const latestBlock = parseInt(blockData.result, 16);
-      
-      // Get gas price
-      const gasUrl = `${etherscanService.baseUrl}?module=gastracker&action=gasoracle&apikey=${etherscanService.apiKey}`;
-      const gasResponse = await fetch(gasUrl);
-      const gasData = await gasResponse.json();
-      
+      // Default stats structure
       const stats = [
         {
           title: "ETHER PRICE",
-          value: `$${ethPrice.toFixed(2)}`,
-          change: "Live data",
+          value: "$0.00",
+          change: "Loading...",
           changeType: "positive"
         },
         {
           title: "LATEST BLOCK",
-          value: latestBlock.toLocaleString(),
+          value: "Loading...",
           subtitle: "Live"
         },
         {
           title: "GAS PRICE",
-          value: gasData.result?.StandardGasPrice ? `${gasData.result.StandardGasPrice} Gwei` : "Loading...",
+          value: "Loading...",
           subtitle: "Standard"
         },
         {
@@ -393,11 +416,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
           value: "Live"
         }
       ];
+
+      // Fetch ETH price
+      try {
+        const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+        const priceData = await priceResponse.json();
+        const ethPrice = priceData.ethereum?.usd;
+        if (ethPrice && !isNaN(ethPrice)) {
+          stats[0].value = `$${ethPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          stats[0].change = "Live data";
+        }
+      } catch (priceError) {
+        console.warn("Failed to fetch ETH price:", priceError);
+      }
+      
+      // Fetch latest block
+      try {
+        const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+        const blockResponse = await fetch(blockUrl);
+        const blockData = await blockResponse.json();
+        if (blockData.result && typeof blockData.result === 'string') {
+          const latestBlock = parseInt(blockData.result, 16);
+          if (!isNaN(latestBlock) && latestBlock > 0) {
+            stats[1].value = latestBlock.toLocaleString();
+          }
+        }
+      } catch (blockError) {
+        console.warn("Failed to fetch latest block:", blockError);
+      }
+      
+      // Fetch gas price
+      try {
+        const gasUrl = `${etherscanService.baseUrl}?module=gastracker&action=gasoracle&apikey=${etherscanService.apiKey}`;
+        const gasResponse = await fetch(gasUrl);
+        const gasData = await gasResponse.json();
+        if (gasData.result) {
+          // Try different gas price fields
+          const gasPrice = gasData.result.ProposeGasPrice || gasData.result.StandardGasPrice || gasData.result.SafeGasPrice;
+          if (gasPrice) {
+            const gasPriceNum = parseFloat(gasPrice);
+            if (!isNaN(gasPriceNum)) {
+              stats[2].value = `${gasPriceNum.toFixed(2)} Gwei`;
+            }
+          }
+        }
+      } catch (gasError) {
+        console.warn("Failed to fetch gas price:", gasError);
+      }
       
       res.json({ stats });
     } catch (error) {
       console.error("Error fetching network stats:", error);
-      res.status(500).json({ error: "Failed to fetch network stats" });
+      // Return default stats even if there's an error
+      const fallbackStats = [
+        { title: "ETHER PRICE", value: "Unavailable", change: "Error", changeType: "neutral" },
+        { title: "LATEST BLOCK", value: "Unavailable", subtitle: "Error" },
+        { title: "GAS PRICE", value: "Unavailable", subtitle: "Error" },
+        { title: "NETWORK", value: "Ethereum Mainnet" },
+        { title: "CONFIRMATIONS", value: "12 blocks" },
+        { title: "STATUS", value: "Error" }
+      ];
+      res.json({ stats: fallbackStats });
     }
   });
 
