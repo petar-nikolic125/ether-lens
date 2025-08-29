@@ -79,7 +79,7 @@ export const EthereumDashboard: React.FC = () => {
       {/* Statistics Grid */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-          {stats.map((stat, index) => (
+          {stats.map((stat: StatCard, index: number) => (
             <div key={index} className="bg-card rounded-lg border border-border p-4 hover:border-border/60 transition-colors">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
@@ -135,7 +135,7 @@ export const EthereumDashboard: React.FC = () => {
               </button>
             </div>
             <div className="divide-y divide-border">
-              {latestBlocks.length > 0 ? latestBlocks.map((block, index) => (
+              {latestBlocks.length > 0 ? latestBlocks.map((block: Block, index: number) => (
                 <div key={block.number || index} className="p-4 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
@@ -192,7 +192,7 @@ export const EthereumDashboard: React.FC = () => {
               </button>
             </div>
             <div className="divide-y divide-border">
-              {latestTransactions.length > 0 ? latestTransactions.map((tx, index) => (
+              {latestTransactions.length > 0 ? latestTransactions.map((tx: Transaction, index: number) => (
                 <div key={tx.hash || index} className="p-4 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">

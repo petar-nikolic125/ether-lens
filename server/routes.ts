@@ -106,12 +106,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isError: tx.isError === "1",
       }));
 
-      // Store wallet if not exists
-      await storage.upsertWallet(validAddress, validStartBlock);
-
-      // Store transactions
-      for (const tx of processedTransactions) {
-        await storage.upsertTransaction(tx);
+      // Try to store wallet and transactions, but continue if database fails
+      try {
+        await storage.upsertWallet(validAddress, validStartBlock);
+        for (const tx of processedTransactions) {
+          await storage.upsertTransaction(tx);
+        }
+      } catch (dbError) {
+        console.warn("Database storage failed, continuing without persistence:", dbError);
       }
 
       // Calculate stats
@@ -270,19 +272,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const blockResponse = await fetch(blockUrl);
         const blockData = await blockResponse.json();
         
-        if (blockData.result) {
+        if (blockData.result && blockData.result.number && blockData.result.timestamp) {
           const block = blockData.result;
           const now = Date.now();
           const blockTime = parseInt(block.timestamp, 16) * 1000;
           const timeAgo = Math.floor((now - blockTime) / 1000);
           
-          blocks.push({
-            number: parseInt(block.number, 16).toString(),
-            miner: block.miner,
-            txCount: block.transactions.length,
-            gasUsed: (parseInt(block.gasUsed, 16) / 1e18).toFixed(6),
-            timeAgo: timeAgo < 60 ? `${timeAgo} secs ago` : `${Math.floor(timeAgo / 60)} min ago`
-          });
+          // Ensure we have valid data before processing
+          const blockNumber = parseInt(block.number, 16);
+          const gasUsed = parseInt(block.gasUsed, 16);
+          
+          if (!isNaN(blockNumber) && !isNaN(gasUsed)) {
+            blocks.push({
+              number: blockNumber.toString(),
+              miner: block.miner || "Unknown",
+              txCount: block.transactions ? block.transactions.length : 0,
+              gasUsed: (gasUsed / 1e18).toFixed(6),
+              timeAgo: timeAgo < 60 ? `${timeAgo} secs ago` : `${Math.floor(timeAgo / 60)} min ago`
+            });
+          }
         }
       }
       
