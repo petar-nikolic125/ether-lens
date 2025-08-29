@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface BalanceChartProps {
@@ -20,10 +19,18 @@ export const BalanceChart = ({ address }: BalanceChartProps) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg p-3 shadow-card">
-          <p className="text-sm text-muted-foreground">{new Date(label).toLocaleDateString()}</p>
-          <p className="text-lg font-semibold text-ethereum">
+        <div className="glass rounded-xl p-4 shadow-neural border border-border/30">
+          <p className="text-sm text-muted-foreground font-space mb-1">
+            {new Date(label).toLocaleDateString()}
+          </p>
+          <p className="text-xl font-bold font-space bg-gradient-primary bg-clip-text text-transparent">
             {payload[0].value.toFixed(4)} ETH
+          </p>
+          <p className="text-xs text-muted-foreground">
+            ≈ ${(payload[0].value * 4352.33).toLocaleString(undefined, { 
+              minimumFractionDigits: 2, 
+              maximumFractionDigits: 2 
+            })}
           </p>
         </div>
       );
@@ -32,64 +39,97 @@ export const BalanceChart = ({ address }: BalanceChartProps) => {
   };
 
   return (
-    <Card className="bg-gradient-card backdrop-blur-sm border-border shadow-card">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold">Balance History</h3>
-          <div className="text-sm text-muted-foreground">
+    <div className="glass-card rounded-2xl p-6 group hover:shadow-neural transition-neural">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h3 className="text-2xl font-bold font-space mb-2">Balance Evolution</h3>
+          <p className="text-muted-foreground font-inter">Neural analysis of ETH balance over time</p>
+        </div>
+        <div className="text-right">
+          <div className="text-sm text-muted-foreground font-space">Wallet</div>
+          <div className="font-mono text-sm bg-secondary/20 px-3 py-1 rounded-lg border border-border/30">
             {address.slice(0, 6)}...{address.slice(-4)}
           </div>
         </div>
-        
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={balanceData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis 
-                dataKey="date" 
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickFormatter={(value) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-              />
-              <YAxis 
-                stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
-                tickFormatter={(value) => `${value.toFixed(2)} ETH`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Line 
-                type="monotone" 
-                dataKey="balance" 
-                stroke="hsl(var(--ethereum))" 
-                strokeWidth={3}
-                dot={{ fill: "hsl(var(--ethereum))", strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, stroke: "hsl(var(--ethereum))", strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      </div>
+      
+      <div className="h-80 mb-6">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={balanceData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke="hsl(var(--border))" 
+              opacity={0.3}
+            />
+            <XAxis 
+              dataKey="date" 
+              stroke="hsl(var(--muted-foreground))"
+              fontSize={12}
+              tickFormatter={(value) => new Date(value).toLocaleDateString(undefined, { 
+                month: 'short', 
+                day: 'numeric' 
+              })}
+              className="font-inter"
+            />
+            <YAxis 
+              stroke="hsl(var(--muted-foreground))"
+              fontSize={12}
+              tickFormatter={(value) => `${value.toFixed(2)}`}
+              className="font-inter"
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line 
+              type="monotone" 
+              dataKey="balance" 
+              stroke="url(#balanceGradient)"
+              strokeWidth={3}
+              dot={{ 
+                fill: "hsl(var(--origin-purple))", 
+                strokeWidth: 2, 
+                r: 4,
+                filter: "drop-shadow(0 0 6px hsl(var(--origin-purple) / 0.6))"
+              }}
+              activeDot={{ 
+                r: 6, 
+                stroke: "hsl(var(--origin-purple))", 
+                strokeWidth: 2,
+                fill: "hsl(var(--origin-cyan))",
+                filter: "drop-shadow(0 0 10px hsl(var(--origin-cyan) / 0.8))"
+              }}
+            />
+            <defs>
+              <linearGradient id="balanceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(var(--origin-purple))" />
+                <stop offset="50%" stopColor="hsl(var(--origin-cyan))" />
+                <stop offset="100%" stopColor="hsl(var(--origin-teal))" />
+              </linearGradient>
+            </defs>
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-lg font-semibold text-chart-3">
-              {Math.max(...balanceData.map(d => d.balance)).toFixed(4)}
-            </div>
-            <div className="text-xs text-muted-foreground">Peak Balance</div>
+      <div className="grid grid-cols-3 gap-6 text-center">
+        <div className="glass rounded-xl p-4 transition-glass">
+          <div className="text-2xl font-bold text-origin-teal font-space mb-1">
+            {Math.max(...balanceData.map(d => d.balance)).toFixed(4)}
           </div>
-          <div>
-            <div className="text-lg font-semibold text-chart-5">
-              {Math.min(...balanceData.map(d => d.balance)).toFixed(4)}
-            </div>
-            <div className="text-xs text-muted-foreground">Lowest Balance</div>
+          <div className="text-xs text-muted-foreground font-space">Peak Balance</div>
+        </div>
+        
+        <div className="glass rounded-xl p-4 transition-glass">
+          <div className="text-2xl font-bold text-chart-5 font-space mb-1">
+            {Math.min(...balanceData.map(d => d.balance)).toFixed(4)}
           </div>
-          <div>
-            <div className="text-lg font-semibold text-ethereum">
-              {balanceData[balanceData.length - 1].balance.toFixed(4)}
-            </div>
-            <div className="text-xs text-muted-foreground">Current Balance</div>
+          <div className="text-xs text-muted-foreground font-space">Lowest Balance</div>
+        </div>
+        
+        <div className="glass rounded-xl p-4 transition-glass">
+          <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent font-space mb-1">
+            {balanceData[balanceData.length - 1].balance.toFixed(4)}
           </div>
+          <div className="text-xs text-muted-foreground font-space">Current Balance</div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };

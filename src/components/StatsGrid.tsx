@@ -1,6 +1,5 @@
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownLeft, Wallet, Clock } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Wallet, Clock, TrendingUp, Activity } from "lucide-react";
 
 interface StatsGridProps {
   address: string;
@@ -20,121 +19,162 @@ export const StatsGrid = ({ address, startBlock }: StatsGridProps) => {
   };
 
   return (
-    <div className="mb-12">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-ethereum" />
-          <h2 className="text-2xl font-bold">Wallet Analysis</h2>
+    <div className="mb-16">
+      <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-primary rounded-2xl flex items-center justify-center neural-glow animate-glow">
+            <Wallet className="w-6 h-6 text-primary-foreground" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold font-space">Neural Wallet Analysis</h2>
+            <p className="text-muted-foreground font-inter">Comprehensive blockchain intelligence</p>
+          </div>
         </div>
-        <Badge variant="secondary" className="font-mono">
-          {address.slice(0, 6)}...{address.slice(-4)}
+        <Badge variant="secondary" className="font-mono text-sm px-4 py-2 bg-secondary/20 border-border/30">
+          {address.slice(0, 8)}...{address.slice(-6)}
         </Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {/* Total Transactions */}
-        <Card className="bg-gradient-card backdrop-blur-sm border-border shadow-card">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-muted-foreground">Total Transactions</div>
-              <div className="w-2 h-2 bg-ethereum rounded-full animate-pulse" />
-            </div>
-            <div className="text-3xl font-bold mb-2">{stats.totalTransactions.toLocaleString()}</div>
-            <div className="text-sm text-muted-foreground">
-              Since block {Number(startBlock).toLocaleString()}
+        <div className="glass-card rounded-2xl p-6 group hover:shadow-neural transition-neural">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-origin-purple/10 to-origin-purple/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-muted-foreground font-space">Total Transactions</div>
+                <Activity className="w-4 h-4 text-origin-purple" />
+              </div>
+              <div className="text-3xl font-bold mb-2 font-space group-hover:text-foreground transition-colors">
+                {stats.totalTransactions.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Since block {Number(startBlock).toLocaleString()}
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Incoming Transactions */}
-        <Card className="bg-gradient-card backdrop-blur-sm border-border shadow-card">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-muted-foreground">Incoming</div>
-              <ArrowDownLeft className="w-4 h-4 text-chart-3" />
-            </div>
-            <div className="text-3xl font-bold mb-2">{stats.incomingTxns.toLocaleString()}</div>
-            <div className="text-sm text-chart-3">
-              +{((stats.incomingTxns / stats.totalTransactions) * 100).toFixed(1)}%
+        <div className="glass-card rounded-2xl p-6 group hover:shadow-neural transition-neural">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-origin-teal/10 to-origin-teal/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-muted-foreground font-space">Incoming</div>
+                <ArrowDownLeft className="w-4 h-4 text-origin-teal" />
+              </div>
+              <div className="text-3xl font-bold mb-2 font-space group-hover:text-foreground transition-colors">
+                {stats.incomingTxns.toLocaleString()}
+              </div>
+              <div className="text-sm text-origin-teal font-medium">
+                +{((stats.incomingTxns / stats.totalTransactions) * 100).toFixed(1)}%
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Outgoing Transactions */}
-        <Card className="bg-gradient-card backdrop-blur-sm border-border shadow-card">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-muted-foreground">Outgoing</div>
-              <ArrowUpRight className="w-4 h-4 text-chart-5" />
-            </div>
-            <div className="text-3xl font-bold mb-2">{stats.outgoingTxns.toLocaleString()}</div>
-            <div className="text-sm text-chart-5">
-              -{((stats.outgoingTxns / stats.totalTransactions) * 100).toFixed(1)}%
+        <div className="glass-card rounded-2xl p-6 group hover:shadow-neural transition-neural">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-chart-5/10 to-chart-5/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-muted-foreground font-space">Outgoing</div>
+                <ArrowUpRight className="w-4 h-4 text-chart-5" />
+              </div>
+              <div className="text-3xl font-bold mb-2 font-space group-hover:text-foreground transition-colors">
+                {stats.outgoingTxns.toLocaleString()}
+              </div>
+              <div className="text-sm text-chart-5 font-medium">
+                -{((stats.outgoingTxns / stats.totalTransactions) * 100).toFixed(1)}%
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Current Balance */}
-        <Card className="bg-gradient-card backdrop-blur-sm border-border shadow-card">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-muted-foreground">Current Balance</div>
-              <div className="text-xs bg-chart-2/20 text-chart-2 px-2 py-1 rounded">ETH</div>
-            </div>
-            <div className="text-3xl font-bold mb-2">{stats.currentBalance}</div>
-            <div className="text-sm text-muted-foreground">
-              ≈ ${(stats.currentBalance * 4352.33).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+        <div className="glass-card rounded-2xl p-6 group hover:shadow-neural transition-neural">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-origin-cyan/10 to-origin-cyan/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-muted-foreground font-space">Current Balance</div>
+                <div className="text-xs bg-origin-cyan/20 text-origin-cyan px-2 py-1 rounded-lg font-space">ETH</div>
+              </div>
+              <div className="text-3xl font-bold mb-2 font-space group-hover:text-foreground transition-colors">
+                {stats.currentBalance}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                ≈ ${(stats.currentBalance * 4352.33).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
+      </div>
 
+      {/* Extended Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Total Volume */}
-        <Card className="bg-gradient-card backdrop-blur-sm border-border shadow-card">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-muted-foreground">Total Volume</div>
-              <div className="text-xs bg-ethereum/20 text-ethereum px-2 py-1 rounded">ETH</div>
-            </div>
-            <div className="text-3xl font-bold mb-2">{stats.totalVolume}</div>
-            <div className="text-sm text-muted-foreground">
-              ≈ ${(stats.totalVolume * 4352.33).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+        <div className="glass-card rounded-2xl p-6 group hover:shadow-neural transition-neural">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-neural rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <TrendingUp className="w-5 h-5 text-origin-purple" />
+                <div className="text-sm text-muted-foreground font-space">Total Volume Processed</div>
+              </div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <div className="text-4xl font-bold font-space group-hover:text-foreground transition-colors">
+                  {stats.totalVolume}
+                </div>
+                <div className="text-lg text-origin-purple font-space">ETH</div>
+              </div>
+              <div className="text-muted-foreground">
+                ≈ ${(stats.totalVolume * 4352.33).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Activity Period */}
-        <Card className="bg-gradient-card backdrop-blur-sm border-border shadow-card md:col-span-2 lg:col-span-3">
-          <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">Activity Period</div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold">First Activity</div>
-                <div className="text-muted-foreground">{stats.firstActivity}</div>
+        <div className="glass-card rounded-2xl p-6 group hover:shadow-neural transition-neural">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-glass rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <Clock className="w-5 h-5 text-origin-cyan" />
+                <div className="text-sm text-muted-foreground font-space">Activity Timeline</div>
               </div>
-              <div className="flex-1 mx-8">
-                <div className="h-1 bg-gradient-primary rounded-full relative">
-                  <div className="absolute inset-0 bg-gradient-primary rounded-full animate-pulse" />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-lg font-semibold font-space">First Activity</div>
+                    <div className="text-muted-foreground font-inter">{stats.firstActivity}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold font-space">Last Activity</div>
+                    <div className="text-muted-foreground font-inter">{stats.lastActivity}</div>
+                  </div>
                 </div>
-                <div className="text-center text-sm text-muted-foreground mt-2">
-                  {Math.floor((new Date().getTime() - new Date(stats.firstActivity).getTime()) / (1000 * 60 * 60 * 24))} days active
+                <div className="relative">
+                  <div className="h-2 bg-gradient-primary rounded-full">
+                    <div className="absolute inset-0 bg-gradient-primary rounded-full animate-pulse-slow opacity-60" />
+                  </div>
+                  <div className="text-center text-sm text-muted-foreground mt-3 font-space">
+                    {Math.floor((new Date().getTime() - new Date(stats.firstActivity).getTime()) / (1000 * 60 * 60 * 24))} days of neural activity
+                  </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-semibold">Last Activity</div>
-                <div className="text-muted-foreground">{stats.lastActivity}</div>
               </div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );
