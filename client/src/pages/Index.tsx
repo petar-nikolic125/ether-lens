@@ -6,6 +6,7 @@ import { BalanceChart } from "@/components/BalanceChart";
 import { NetworkStats } from "@/components/NetworkStats";
 import { HeroSection } from "@/components/HeroSection";
 import { Header } from "@/components/Header";
+import { EthereumDashboard } from "@/components/EthereumDashboard";
 
 const Index = () => {
   const [searchData, setSearchData] = useState<{ address: string; startBlock: string } | null>(null);
@@ -15,21 +16,18 @@ const Index = () => {
       {/* Header */}
       <Header />
       
-      {/* Hero Section */}
+      {/* Hero Section with Trust the Source */}
       <HeroSection />
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Network Stats */}
-        <NetworkStats />
+      {/* Ethereum Dashboard - Main Content */}
+      <EthereumDashboard />
 
-        {/* Search Form */}
-        <div className="mb-12">
-          <SearchForm onSearch={setSearchData} />
-        </div>
-
-        {searchData ? (
-          <>
+      {/* Search-based Analysis (when user searches) */}
+      {searchData && (
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
+          <div className="border-t border-border pt-8">
+            <h2 className="text-2xl font-bold mb-8 font-space">Wallet Analysis Results</h2>
+            
             {/* Stats Grid */}
             <StatsGrid address={searchData.address} startBlock={searchData.startBlock} />
 
@@ -51,28 +49,16 @@ const Index = () => {
 
             {/* Transaction List */}
             <TransactionList address={searchData.address} startBlock={searchData.startBlock} />
-          </>
-        ) : (
-          /* Welcome Section */
-          <div className="text-center py-16">
-            <div className="ot-card-glass max-w-4xl mx-auto hover-lift">
-              <h2 className="text-3xl font-bold mb-6 font-space ot-gradient-text">
-                The Ethereum Blockchain Explorer
-              </h2>
-              <p className="text-muted-foreground mb-12 text-lg max-w-3xl mx-auto leading-relaxed font-inter">
-                Advanced blockchain analysis powered by OriginTrail's neural network infrastructure.
-                Explore transactions, track balances, and discover insights across the Ethereum ecosystem.
-              </p>
-              
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground/70 font-inter">
-                  Enter a wallet address above to begin your blockchain analysis
-                </p>
-              </div>
-            </div>
           </div>
-        )}
-      </main>
+        </main>
+      )}
+
+      {/* Search Form - Fixed position overlay */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 max-w-md">
+          <SearchForm onSearch={setSearchData} />
+        </div>
+      </div>
     </div>
   );
 };
