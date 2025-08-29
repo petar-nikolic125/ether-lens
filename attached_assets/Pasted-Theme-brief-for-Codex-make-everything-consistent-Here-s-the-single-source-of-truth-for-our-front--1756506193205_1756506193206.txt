@@ -1,0 +1,233 @@
+Theme brief for Codex — make everything consistent
+
+Here’s the single source of truth for our front-end look & feel. Use this to refactor existing components and keep new ones perfectly consistent.
+
+North star
+
+Mood: OriginTrail-inspired, true dark UI (almost black) with white type and purple → cyan accents.
+
+Rule of color: Color = emphasis only (CTAs, focus rings, data accents). Most surfaces should remain monochrome.
+
+Shape language: Big radii, pill chips, soft glows, subtle glass.
+
+Motion: Calm, responsive micro-interactions—no bouncy stuff.
+
+Design tokens (already in index.css)
+
+Use the CSS variables exclusively—no hardcoded colors. These are already defined; lean on them.
+
+Core
+
+--background, --foreground
+
+--card, --card-foreground
+
+--border, --input, --ring, --radius
+
+Brand
+
+--origin-purple, --origin-cyan, --origin-teal
+
+Feedback
+
+--success, --warning, --destructive (+ their foregrounds)
+
+Gradients
+
+--gradient-primary (purple→cyan)
+
+--gradient-neural (ambient blobs)
+
+--gradient-card, --gradient-glass, --gradient-border
+
+Shadows & motion
+
+--shadow-neural, --shadow-card, --shadow-input, --shadow-glass
+
+--transition-glass, --transition-neural, --transition-smooth
+
+Typography
+
+Headings: Space Grotesk (class font-space)
+
+Body: Inter (class font-inter)
+
+Line heights: default; avoid custom values unless absolutely needed.
+
+Tailwind setup (already wired)
+
+Rely on the Tailwind theme extension that maps to tokens:
+
+Colors: background, foreground, primary, secondary, accent, muted, card, popover, chart.1–5, etc.
+
+Background images: bg-gradient-primary, bg-gradient-glass, bg-gradient-card, bg-neural
+
+Radius scale via --radius → use rounded-2xl, rounded-xl, and rounded-pill (utility below)
+
+Core utilities/classes available (reuse them):
+
+Surfaces: .glass, .glass-card, .ot-card, .ot-card-glass
+
+Buttons: .btn, .btn-primary, .btn-secondary, .ot-btn, .ot-btn-outline
+
+Inputs: .ot-input, .ot-textarea, .ot-select
+
+Chips/Badges: .ot-chip, .ot-badge
+
+Borders: .ot-border-gradient (robust, no mask hacks)
+
+Effects: .neural-glow, .hover-lift, .ring-neural
+
+Helpers: .rounded-pill, .ot-gradient-text
+
+Layout & spacing
+
+Page grid: max-w-7xl mx-auto px-4 sm:px-6
+
+Section rhythm: top/bottom paddings around hero ~ 16–20 (responsive), subsections ~ 10–14.
+
+Gaps: gap-6 (cards), gap-8/10 (major blocks).
+
+Cards: rounded-2xl p-6 by default; can use p-5 on dense grids.
+
+Container: Keep hero, description, and stat blocks aligned on the same container.
+
+Component rules
+Hero (Trust the Source)
+
+Banner uses monochrome base with purple cone spotlight and white type.
+
+Title stack: TRUST THE SOURCE (largest), then chip, then the paragraph.
+
+Under the banner add the thin gradient divider (.ot-divider) to visually tether the copy.
+
+Already implemented in HeroSection refactor—use that pattern across pages.
+
+Buttons
+
+Primary CTA = .btn.btn-primary → background: var(--gradient-primary), white text, soft shadow (--shadow-card).
+
+Secondary/ghost = .btn.btn-secondary with border + monochrome surface.
+
+Do not invent ad-hoc sizes; stick to px-5 py-3 rounded-full for main CTAs.
+
+Cards
+
+Default = .ot-card (bordered dark card) or .ot-card-glass (subtle glass).
+
+On hover: apply .hover-lift and optional subtle overlay (gradient at 10–15% opacity).
+
+No neon borders. If you need a fancy edge, use .ot-border-gradient.
+
+Inputs
+
+Use .ot-input (or .ot-textarea, .ot-select), never raw <input> styling.
+
+Focus states must use .ring-neural.
+
+Chips & badges
+
+Use .ot-chip or .ot-badge—don’t recreate fit/line-height.
+
+Tag examples: “Standard”, “8 secs ago”, etc.
+
+Tables & lists (transactions)
+
+Header row: muted type, border bottom with border-border/30.
+
+Row hover: hover:bg-secondary/5.
+
+Monospace fragments (addresses, hashes): wrap in font-mono text-sm.
+
+Use tiny colored dot for incoming/outgoing status (teal vs chart-5).
+
+Stats
+
+4-up grid on desktop (grid-cols-4), 2-up on tablet, 1-up on mobile.
+
+Each stat card uses .glass-card rounded-2xl p-6 + tiny status chip in top-right.
+
+Icon tile: 40px container with the stat gradient (10–20% opacity), not full-color fill.
+
+Charts
+
+Keep the axis/line colors monochrome; the line stroke uses a gradient (balanceGradient).
+
+Tooltip uses .glass card with gradient text for the numeric value.
+
+No saturated backgrounds behind chart lines.
+
+Accessibility
+
+Minimum contrast: body text on cards ≥ 4.5:1 (our default passes).
+
+Focus visible on all interactive elements (.ring-neural).
+
+Avoid body text over heavy gradients; keep gradient for accents only.
+
+Refactor plan for consistency
+
+Sweep for hardcoded colors (#fff, #000, rgb(...), hsl(...)) and replace with Tailwind token classes or var(--*).
+
+Replace disparate buttons with .btn variants.
+
+Replace card shells with .ot-card or .ot-card-glass.
+
+Swap ad-hoc borders with .ot-border-gradient where decorative; plain border otherwise.
+
+Unify spacing: headings mb-2/3/6 only; avoid random mb-5.5.
+
+Align containers to max-w-7xl px-4 sm:px-6.
+
+Use .font-space for headings and .font-inter for body.
+
+Confirm all focus/hover states use the shared utilities (.hover-lift, .ring-neural, transitions).
+
+Naming & structure
+
+Prefix custom, reusable classes with ot-.
+
+Keep one theme.css/index.css for tokens and component utilities.
+
+Tailwind: keep extend clean; do not add new colors unless they map to a token.
+
+New components: create /components/ui/* with neutral, tokenized styles.
+
+Code snippets (reference)
+A consistent card
+<div className="ot-card hover-lift">
+  <div className="flex items-center justify-between mb-4">
+    <div className="text-sm text-muted-foreground font-space">Latest Block</div>
+    <span className="ot-badge">8 secs ago</span>
+  </div>
+  <div className="text-3xl font-bold font-space">20,629,847</div>
+</div>
+
+Gradient border without masks
+<div class="ot-border-gradient p-6 rounded-2xl">
+  <!-- inner content -->
+</div>
+
+Input with consistent focus
+<input
+  className="ot-input"
+  placeholder="0xaa7a9c..."
+/>
+
+PR checklist (quick)
+
+ No hardcoded colors/spacing—tokens only.
+
+ Buttons use .btn variants; inputs use .ot-input.
+
+ Cards use .ot-card / .ot-card-glass (+ .hover-lift).
+
+ Focus states visible with .ring-neural.
+
+ Container alignment: max-w-7xl grid used.
+
+ Hero/section headings use font-space; body uses font-inter.
+
+ Gradients limited to accents (hero, CTAs, borders, chart stroke).
+
+ Screenshots attached for desktop/tablet/mobile.
