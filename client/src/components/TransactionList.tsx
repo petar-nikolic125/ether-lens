@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ArrowDownLeft, ExternalLink, Clock, Filter } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface TransactionListProps {
   address: string;
@@ -10,14 +11,14 @@ interface TransactionListProps {
 
 interface Transaction {
   hash: string;
-  block: number;
+  blockNumber: number;
   timestamp: string;
-  from: string;
-  to: string;
-  value: number;
-  type: "incoming" | "outgoing";
+  fromAddress: string;
+  toAddress: string | null;
+  value: string;
   gasUsed: number;
   gasPrice: number;
+  isError: boolean;
 }
 
 export const TransactionList = ({ address, startBlock }: TransactionListProps) => {
@@ -25,23 +26,31 @@ export const TransactionList = ({ address, startBlock }: TransactionListProps) =
   const [filter, setFilter] = useState<"all" | "incoming" | "outgoing">("all");
   const itemsPerPage = 10;
 
-  // Create mock data once per address/startBlock so pagination & filters are stable
-  const allTransactions: Transaction[] = useMemo(() => {
-    return Array.from({ length: 50 }, (_, i) => ({
-      hash: `0x${Math.random().toString(16).slice(2).padEnd(64, "0").slice(0, 64)}`,
-      block: Number(startBlock) + i * 100,
-      timestamp: new Date(Date.now() - i * 3600000).toISOString(),
-      from: i % 2 === 0 ? address : `0x${Math.random().toString(16).slice(2, 42)}`,
-      to: i % 2 === 0 ? `0x${Math.random().toString(16).slice(2, 42)}` : address,
-      value: Math.random() * 10,
-      type: i % 2 === 0 ? "outgoing" : "incoming",
-      gasUsed: 21000 + Math.floor(Math.random() * 50000),
-      gasPrice: 20 + Math.random() * 80,
-    }));
-  }, [address, startBlock]);
+  // Fetch transactions from API
+  const { data: transactionData, isLoading } = useQuery({
+    queryKey: ['transactions', address, startBlock],
+    queryFn: async () => {
+      const response = await fetch(`/api/wallet/${address}/transactions?startBlock=${startBlock}`);
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      return response.json();
+    },
+    enabled: !!address && !!startBlock,
+  });
+
+  const allTransactions: Transaction[] = transactionData?.transactions || [];
+
+  // Process transactions to add type
+  const processedTransactions = allTransactions.map(tx => ({
+    ...tx,
+    type: tx.toAddress?.toLowerCase() === address.toLowerCase() ? "incoming" : "outgoing" as "incoming" | "outgoing",
+    block: tx.blockNumber,
+    from: tx.fromAddress,
+    to: tx.toAddress || "",
+    value: parseFloat(tx.value) / 1e18, // Convert from Wei to ETH
+  }));
 
   const filteredTransactions =
-      filter === "all" ? allTransactions : allTransactions.filter((tx) => tx.type === filter);
+      filter === "all" ? processedTransactions : processedTransactions.filter((tx) => tx.type === filter);
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -83,16 +92,16 @@ export const TransactionList = ({ address, startBlock }: TransactionListProps) =
               <Filter className="w-4 h-4 text-muted-foreground" />
               <div className="flex rounded-pill p-1 ot-border-gradient bg-background">
                 {[
-                  { key: "all", label: "All", count: allTransactions.length },
+                  { key: "all", label: "All", count: processedTransactions.length },
                   {
                     key: "incoming",
                     label: "In",
-                    count: allTransactions.filter((tx) => tx.type === "incoming").length,
+                    count: processedTransactions.filter((tx) => tx.type === "incoming").length,
                   },
                   {
                     key: "outgoing",
                     label: "Out",
-                    count: allTransactions.filter((tx) => tx.type === "outgoing").length,
+                    count: processedTransactions.filter((tx) => tx.type === "outgoing").length,
                   },
                 ].map((option) => {
                   const active = filter === (option.key as typeof filter);

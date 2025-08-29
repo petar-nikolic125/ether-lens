@@ -1,39 +1,207 @@
-import { users, type User, type InsertUser } from "@shared/schema";
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import { eq, and } from "drizzle-orm";
+import { 
+  users, wallets, transactions, tokenTransfers, balanceHistory,
+  type User, type InsertUser, type Wallet, type Transaction, 
+  type TokenTransfer, type BalanceHistory 
+} from "@shared/schema";
 
-// modify the interface with any CRUD methods
-// you might need
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set");
+}
+
+const sql = neon(process.env.DATABASE_URL);
+const db = drizzle(sql);
 
 export interface IStorage {
+  // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Wallet methods
+  upsertWallet(address: string, lastScannedBlock: number): Promise<Wallet>;
+  getWallet(address: string): Promise<Wallet | undefined>;
+  
+  // Transaction methods
+  upsertTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction>;
+  getTransactionsByWallet(address: string, limit?: number): Promise<Transaction[]>;
+  
+  // Token transfer methods
+  upsertTokenTransfer(transfer: Omit<TokenTransfer, 'id' | 'createdAt'>): Promise<TokenTransfer>;
+  getTokenTransfersByWallet(address: string, limit?: number): Promise<TokenTransfer[]>;
+  
+  // Balance history methods
+  saveBalanceHistory(balanceData: Omit<BalanceHistory, 'id' | 'createdAt'>): Promise<BalanceHistory>;
+  getBalanceHistory(address: string, limit?: number): Promise<BalanceHistory[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  currentId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.currentId = 1;
-  }
-
+export class DrizzleStorage implements IStorage {
+  // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  // Wallet methods
+  async upsertWallet(address: string, lastScannedBlock: number): Promise<Wallet> {
+    const existing = await this.getWallet(address);
+    
+    if (existing) {
+      const result = await db
+        .update(wallets)
+        .set({ lastScannedBlock })
+        .where(eq(wallets.address, address.toLowerCase()))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db
+        .insert(wallets)
+        .values({ 
+          address: address.toLowerCase(), 
+          lastScannedBlock 
+        })
+        .returning();
+      return result[0];
+    }
+  }
+
+  async getWallet(address: string): Promise<Wallet | undefined> {
+    const result = await db
+      .select()
+      .from(wallets)
+      .where(eq(wallets.address, address.toLowerCase()))
+      .limit(1);
+    return result[0];
+  }
+
+  // Transaction methods
+  async upsertTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction> {
+    try {
+      const result = await db
+        .insert(transactions)
+        .values({
+          ...transaction,
+          fromAddress: transaction.fromAddress.toLowerCase(),
+          toAddress: transaction.toAddress?.toLowerCase() || null,
+        })
+        .onConflictDoNothing({ target: transactions.hash })
+        .returning();
+      
+      if (result.length > 0) {
+        return result[0];
+      }
+      
+      // If conflict, return existing transaction
+      const existing = await db
+        .select()
+        .from(transactions)
+        .where(eq(transactions.hash, transaction.hash))
+        .limit(1);
+      return existing[0];
+    } catch (error) {
+      console.error("Error upserting transaction:", error);
+      throw error;
+    }
+  }
+
+  async getTransactionsByWallet(address: string, limit: number = 50): Promise<Transaction[]> {
+    const lowerAddress = address.toLowerCase();
+    return await db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.fromAddress, lowerAddress),
+          eq(transactions.toAddress, lowerAddress)
+        )
+      )
+      .orderBy(transactions.blockNumber)
+      .limit(limit);
+  }
+
+  // Token transfer methods
+  async upsertTokenTransfer(transfer: Omit<TokenTransfer, 'id' | 'createdAt'>): Promise<TokenTransfer> {
+    try {
+      const result = await db
+        .insert(tokenTransfers)
+        .values({
+          ...transfer,
+          fromAddress: transfer.fromAddress.toLowerCase(),
+          toAddress: transfer.toAddress.toLowerCase(),
+          contractAddress: transfer.contractAddress.toLowerCase(),
+        })
+        .onConflictDoNothing({ target: [tokenTransfers.transactionHash, tokenTransfers.contractAddress] })
+        .returning();
+      
+      if (result.length > 0) {
+        return result[0];
+      }
+      
+      // If conflict, return existing transfer
+      const existing = await db
+        .select()
+        .from(tokenTransfers)
+        .where(
+          and(
+            eq(tokenTransfers.transactionHash, transfer.transactionHash),
+            eq(tokenTransfers.contractAddress, transfer.contractAddress.toLowerCase())
+          )
+        )
+        .limit(1);
+      return existing[0];
+    } catch (error) {
+      console.error("Error upserting token transfer:", error);
+      throw error;
+    }
+  }
+
+  async getTokenTransfersByWallet(address: string, limit: number = 50): Promise<TokenTransfer[]> {
+    const lowerAddress = address.toLowerCase();
+    return await db
+      .select()
+      .from(tokenTransfers)
+      .where(
+        and(
+          eq(tokenTransfers.fromAddress, lowerAddress),
+          eq(tokenTransfers.toAddress, lowerAddress)
+        )
+      )
+      .orderBy(tokenTransfers.blockNumber)
+      .limit(limit);
+  }
+
+  // Balance history methods
+  async saveBalanceHistory(balanceData: Omit<BalanceHistory, 'id' | 'createdAt'>): Promise<BalanceHistory> {
+    const result = await db
+      .insert(balanceHistory)
+      .values({
+        ...balanceData,
+        walletAddress: balanceData.walletAddress.toLowerCase(),
+      })
+      .returning();
+    return result[0];
+  }
+
+  async getBalanceHistory(address: string, limit: number = 100): Promise<BalanceHistory[]> {
+    return await db
+      .select()
+      .from(balanceHistory)
+      .where(eq(balanceHistory.walletAddress, address.toLowerCase()))
+      .orderBy(balanceHistory.blockNumber)
+      .limit(limit);
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DrizzleStorage();

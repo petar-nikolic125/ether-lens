@@ -7,6 +7,8 @@ import { NetworkStats } from "@/components/NetworkStats";
 import { HeroSection } from "@/components/HeroSection";
 import { Header } from "@/components/Header";
 import { EthereumDashboard } from "@/components/EthereumDashboard";
+import { HistoricalBalance } from "@/components/HistoricalBalance";
+import { TokenTransfers } from "@/components/TokenTransfers";
 
 const Index = () => {
   const [searchData, setSearchData] = useState<{ address: string; startBlock: string } | null>(null);
@@ -49,6 +51,17 @@ const Index = () => {
 
             {/* Transaction List */}
             <TransactionList address={searchData.address} startBlock={searchData.startBlock} />
+
+            {/* Bonus Features */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+              {/* Historical Balance Lookup */}
+              <HistoricalBalance address={searchData.address} />
+              
+              {/* Token Transfers */}
+              <div className="lg:col-span-2">
+                <TokenTransfers address={searchData.address} startBlock={searchData.startBlock} />
+              </div>
+            </div>
           </div>
         </main>
       )}

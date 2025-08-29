@@ -44,14 +44,31 @@ export const SearchForm = ({ onSearch }: SearchFormProps) => {
     }
 
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 1500)); // simulate API delay
-    onSearch({ address, startBlock });
-    setIsLoading(false);
+    
+    try {
+      // Call the API to start transaction fetching
+      const response = await fetch(`/api/wallet/${address}/transactions?startBlock=${startBlock}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch transactions');
+      }
 
-    toast({
-      title: "Analysis Started",
-      description: `Neural analysis initiated for ${address.slice(0, 6)}...${address.slice(-4)}`,
-    });
+      onSearch({ address, startBlock });
+      
+      toast({
+        title: "Analysis Complete",
+        description: `Successfully loaded transactions for ${address.slice(0, 6)}...${address.slice(-4)}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Failed to fetch transaction data",
+        variant: "destructive",
+      });
+    }
+    
+    setIsLoading(false);
   };
 
   return (
