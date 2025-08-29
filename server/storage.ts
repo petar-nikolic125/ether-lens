@@ -89,6 +89,18 @@ export class DrizzleStorage implements IStorage {
   // Transaction methods
   async upsertTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction> {
     try {
+      // Check if transaction already exists
+      const existing = await db
+        .select()
+        .from(transactions)
+        .where(eq(transactions.hash, transaction.hash))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return existing[0];
+      }
+      
+      // Insert new transaction
       const result = await db
         .insert(transactions)
         .values({
@@ -96,23 +108,18 @@ export class DrizzleStorage implements IStorage {
           fromAddress: transaction.fromAddress.toLowerCase(),
           toAddress: transaction.toAddress?.toLowerCase() || null,
         })
-        .onConflictDoNothing({ target: transactions.hash })
         .returning();
       
-      if (result.length > 0) {
-        return result[0];
-      }
-      
-      // If conflict, return existing transaction
+      return result[0];
+    } catch (error) {
+      console.error("Error upserting transaction:", error);
+      // Return existing if insert failed due to conflict
       const existing = await db
         .select()
         .from(transactions)
         .where(eq(transactions.hash, transaction.hash))
         .limit(1);
       return existing[0];
-    } catch (error) {
-      console.error("Error upserting transaction:", error);
-      throw error;
     }
   }
 
@@ -134,6 +141,23 @@ export class DrizzleStorage implements IStorage {
   // Token transfer methods
   async upsertTokenTransfer(transfer: Omit<TokenTransfer, 'id' | 'createdAt'>): Promise<TokenTransfer> {
     try {
+      // Check if transfer already exists
+      const existing = await db
+        .select()
+        .from(tokenTransfers)
+        .where(
+          and(
+            eq(tokenTransfers.transactionHash, transfer.transactionHash),
+            eq(tokenTransfers.contractAddress, transfer.contractAddress.toLowerCase())
+          )
+        )
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return existing[0];
+      }
+      
+      // Insert new transfer
       const result = await db
         .insert(tokenTransfers)
         .values({
@@ -142,14 +166,12 @@ export class DrizzleStorage implements IStorage {
           toAddress: transfer.toAddress.toLowerCase(),
           contractAddress: transfer.contractAddress.toLowerCase(),
         })
-        .onConflictDoNothing({ target: [tokenTransfers.transactionHash, tokenTransfers.contractAddress] })
         .returning();
       
-      if (result.length > 0) {
-        return result[0];
-      }
-      
-      // If conflict, return existing transfer
+      return result[0];
+    } catch (error) {
+      console.error("Error upserting token transfer:", error);
+      // Return existing if insert failed due to conflict
       const existing = await db
         .select()
         .from(tokenTransfers)
@@ -161,9 +183,6 @@ export class DrizzleStorage implements IStorage {
         )
         .limit(1);
       return existing[0];
-    } catch (error) {
-      console.error("Error upserting token transfer:", error);
-      throw error;
     }
   }
 
