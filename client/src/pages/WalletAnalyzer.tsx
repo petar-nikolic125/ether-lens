@@ -17,12 +17,22 @@ const WalletAnalyzer = () => {
   const [activeWallet, setActiveWallet] = useState<{address: string, startBlock: string} | null>(null);
 
   const { data: walletData, isLoading, error } = useQuery({
-    queryKey: ["/api/wallet", activeWallet?.address, "transactions", activeWallet?.startBlock],
-    enabled: !!activeWallet?.address,
+    queryKey: ['wallet-transactions', activeWallet?.address, activeWallet?.startBlock],
+    queryFn: async () => {
+      const response = await fetch(`/api/wallet/${activeWallet!.address}/transactions?startBlock=${activeWallet!.startBlock}`);
+      if (!response.ok) throw new Error('Failed to fetch wallet data');
+      return response.json();
+    },
+    enabled: !!activeWallet?.address && !!activeWallet?.startBlock,
   });
 
   const { data: balanceData } = useQuery({
-    queryKey: ["/api/wallet", activeWallet?.address, "balance"],
+    queryKey: ['wallet-current-balance', activeWallet?.address],
+    queryFn: async () => {
+      const response = await fetch(`/api/wallet/${activeWallet!.address}/balance`);
+      if (!response.ok) throw new Error('Failed to fetch balance');
+      return response.json();
+    },
     enabled: !!activeWallet?.address,
   });
 

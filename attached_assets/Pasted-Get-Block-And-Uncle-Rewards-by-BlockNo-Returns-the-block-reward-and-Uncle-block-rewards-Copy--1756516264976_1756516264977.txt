@@ -1,0 +1,256 @@
+Get Block And Uncle Rewards by BlockNo
+Returns the block reward and 'Uncle' block rewards.
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=block
+   &action=getblockreward
+   &blockno=2165403
+   &apikey=YourApiKeyToken
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+blockno
+
+the integer block number to check block rewards for eg. 12697906
+
+Get Block Transactions Count by BlockNo
+Returns the number of transactions in a specified block.
+
+This endpoint is only available on Etherscan, `chainId` 1
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=block
+   &action=getblocktxnscount
+   &blockno=2165403
+   &apikey=YourApiKeyToken
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+blockno
+
+the integer block number to get the transaction count for, eg. 2165403
+
+Get Estimated Block Countdown Time by BlockNo
+Returns the estimated time remaining, in seconds, until a certain block is mined.
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=block
+   &action=getblockcountdown
+   &blockno=16701588
+   &apikey=YourApiKeyToken
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+blockno
+
+the integer block number to estimate time remaining to be mined eg. 12697906
+
+Get Block Number by Timestamp
+Returns the block number that was mined at a certain timestamp.
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=block
+   &action=getblocknobytime
+   &timestamp=1578638524
+   &closest=before
+   &apikey=YourApiKeyToken
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+timestamp
+
+the integer representing the Unix timestamp in seconds.
+
+closest
+
+the closest available block to the provided timestamp, either before or after
+
+⏳ Tip : Convert a regular date-time to a Unix timestamp.
+
+Get Daily Average Block Size 
+Returns the daily average block size within a date range.
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=stats
+   &action=dailyavgblocksize
+   &startdate=2019-02-01
+   &enddate=2019-02-28
+   &sort=asc
+   &apikey=YourApiKeyToken
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+startdate
+
+the starting date in yyyy-MM-dd format, eg. 2019-02-01
+
+enddate
+
+the ending date in yyyy-MM-dd format, eg. 2019-02-28
+
+sort
+
+the sorting preference, use asc to sort by ascending and desc to sort by descending
+
+Get Daily Block Count and Rewards 
+Returns the number of blocks mined daily and the amount of block rewards.
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=stats
+   &action=dailyblkcount
+   &startdate=2019-02-01
+   &enddate=2019-02-28
+   &sort=asc
+   &apikey=YourApiKeyToken 
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+startdate
+
+the starting date in yyyy-MM-dd format, eg. 2019-02-01
+
+enddate
+
+the ending date in yyyy-MM-dd format, eg. 2019-02-28
+
+sort
+
+the sorting preference, use asc to sort by ascending and desc to sort by descending
+
+Get Daily Block Rewards 
+Returns the amount of block rewards distributed to miners daily.
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=stats
+   &action=dailyblockrewards
+   &startdate=2019-02-01
+   &enddate=2019-02-28
+   &sort=asc
+   &apikey=YourApiKeyToken 
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+startdate
+
+the starting date in yyyy-MM-dd format, eg. 2019-02-01
+
+enddate
+
+the ending date in yyyy-MM-dd format, eg. 2019-02-28
+
+sort
+
+the sorting preference, use asc to sort by ascending and desc to sort by descending
+
+Get Daily Average Time for A Block to be Included in the Ethereum Blockchain 
+Returns the daily average of time needed for a block to be successfully mined.
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=stats
+   &action=dailyavgblocktime
+   &startdate=2019-02-01
+   &enddate=2019-02-28
+   &sort=asc
+   &apikey=YourApiKeyToken 
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+startdate
+
+the starting date in yyyy-MM-dd format, eg. 2019-02-01
+
+enddate
+
+the ending date in yyyy-MM-dd format, eg. 2019-02-28
+
+sort
+
+the sorting preference, use asc to sort by ascending and desc to sort by descending
+
+Get Daily Uncle Block Count and Rewards 
+Returns the number of 'Uncle' blocks mined daily and the amount of 'Uncle' block rewards.
+
+Copy
+https://api.etherscan.io/v2/api
+   ?chainid=1
+   &module=stats
+   &action=dailyuncleblkcount
+   &startdate=2019-02-01
+   &enddate=2019-02-28
+   &sort=asc
+   &apikey=YourApiKeyToken 
+Try this endpoint in your browser 🔗
+
+Request
+Response
+Query Parameters
+
+Parameter
+Description
+startdate
+
+the starting date in yyyy-MM-dd format, eg. 2019-02-01
+
+enddate
+
+the ending date in yyyy-MM-dd format, eg. 2019-02-28
+
+sort
+
+the sorting preference, use asc to sort by ascending and desc to sort by descending

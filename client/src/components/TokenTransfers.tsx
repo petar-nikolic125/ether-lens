@@ -164,7 +164,7 @@ export const TokenTransfers = ({ address, startBlock }: TokenTransfersProps) => 
                 const isIncoming = transfer.toAddress.toLowerCase() === address.toLowerCase();
                 
                 return (
-                  <tr key={`${transfer.transactionHash}-${transfer.contractAddress}`} className="border-b border-border/20 hover:bg-secondary/5 transition-colors group">
+                  <tr key={`${transfer.transactionHash}-${transfer.contractAddress}-${index}`} className="border-b border-border/20 hover:bg-secondary/5 transition-colors group">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
