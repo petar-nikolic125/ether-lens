@@ -960,18 +960,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
         
-        const response = { 
-          data: chartData,
-          lastUpdated: new Date().toISOString(),
-          period: `${validDays} days`
-        };
-        setCachedData(cacheKey, response);
-        res.json(response);
-      } else {
-        const response = { data: [], lastUpdated: new Date().toISOString(), period: `${validDays} days` };
-        setCachedData(cacheKey, response);
-        res.json(response);
-      }
+      const response = { 
+        data: chartData,
+        lastUpdated: new Date().toISOString(),
+        period: `${validDays} days`
+      };
+      setCachedData(cacheKey, response);
+      res.json(response);
     } catch (error) {
       console.error("Error fetching ETH price history:", error);
       const errorResponse = { data: [], lastUpdated: new Date().toISOString(), period: "N/A" };

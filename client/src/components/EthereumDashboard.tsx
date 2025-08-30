@@ -127,7 +127,9 @@ export const EthereumDashboard: React.FC = () => {
 
   const networkMetrics = networkActivityData?.metrics || [];
   
-  const currentPrice = priceChartData.length > 0 ? priceChartData[priceChartData.length - 1]?.price : 0;
+  // Use the same price from network stats for consistency
+  const ethPriceStat = stats.find(stat => stat.title === "ETHER PRICE");
+  const currentPrice = ethPriceStat?.value ? parseFloat(ethPriceStat.value.replace('$', '').replace(',', '')) : 0;
   const previousPrice = priceChartData.length > 1 ? priceChartData[priceChartData.length - 2]?.price : currentPrice;
   const priceChange = currentPrice - previousPrice;
   const priceChangePercent = previousPrice > 0 ? ((priceChange / previousPrice) * 100) : 0;
