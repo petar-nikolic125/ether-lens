@@ -368,6 +368,22 @@
     box-shadow: 0 12px 28px hsl(225 100% 2% / 0.6);
   }
 
+  /* Professional attribution styling */
+  .attribution-glow {
+    animation: attribution-pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes attribution-pulse {
+    0%, 100% { 
+      box-shadow: 0 0 20px hsl(var(--origin-purple) / 0.15),
+                  0 0 40px hsl(var(--origin-cyan) / 0.10);
+    }
+    50% { 
+      box-shadow: 0 0 30px hsl(var(--origin-purple) / 0.25),
+                  0 0 60px hsl(var(--origin-cyan) / 0.15);
+    }
+  }
+
   /* Subtle white for icons over dark buttons (matches their arrow icon color) */
   .text-dark-white { color: var(--color-dark-white); }
 

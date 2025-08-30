@@ -88,6 +88,24 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
 
         {/* Divider */}
         <div className="ot-divider mx-auto max-w-4xl" />
+        
+        {/* Professional Attribution */}
+        <div className="text-center mt-12 mb-8">
+          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-[hsl(var(--origin-purple)/0.08)] via-[hsl(var(--origin-cyan)/0.06)] to-[hsl(var(--origin-purple)/0.08)] border border-[hsl(var(--origin-purple)/0.2)] backdrop-blur-sm attribution-glow">
+            <div className="w-2 h-2 rounded-full bg-gradient-primary animate-pulse"></div>
+            <span className="font-space text-sm font-medium tracking-wide text-muted-foreground">
+              Engineered by{" "}
+              <span className="text-foreground font-semibold bg-gradient-to-r from-[hsl(var(--origin-purple))] to-[hsl(var(--origin-cyan))] bg-clip-text text-transparent">
+                Petar Nikolic
+              </span>
+              {" "}for{" "}
+              <span className="text-foreground font-semibold bg-gradient-to-r from-[hsl(var(--origin-cyan))] to-[hsl(var(--origin-purple))] bg-clip-text text-transparent">
+                OriginTrail
+              </span>
+            </span>
+            <div className="w-2 h-2 rounded-full bg-gradient-primary animate-pulse"></div>
+          </div>
+        </div>
       </div>
     </header>
   );
