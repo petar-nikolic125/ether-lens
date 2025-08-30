@@ -112,6 +112,16 @@ class EtherscanService {
     const data = await this.makeRequest(url);
     
     if (data.status !== "1") {
+      // Handle common API limitations
+      if (data.message?.includes("rate limit") || data.message?.includes("NOTOK")) {
+        console.warn(`Etherscan API limitation: ${data.message}`);
+        // Return an estimated block number based on average block time (12 seconds)
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeDiff = currentTime - timestamp;
+        const estimatedBlocksAgo = Math.floor(timeDiff / 12);
+        const currentBlock = await this.getLatestBlockNumber();
+        return Math.max(0, currentBlock - estimatedBlocksAgo);
+      }
       throw new Error(data.message || "Failed to fetch block");
     }
     
@@ -355,8 +365,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const targetDate = new Date(`${validDate}T00:00:00Z`);
       const timestamp = Math.floor(targetDate.getTime() / 1000);
 
-      // Get block number for that timestamp
-      const blockNumber = await etherscanService.getBlockByTimestamp(timestamp);
+      // Get block number for that timestamp with fallback
+      let blockNumber;
+      try {
+        blockNumber = await etherscanService.getBlockByTimestamp(timestamp);
+      } catch (blockError) {
+        console.warn(`Using estimated block for ${validDate} due to API limitation:`, blockError);
+        // Estimate block number (12 seconds per block average)
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeDiff = currentTime - timestamp;
+        const estimatedBlocksAgo = Math.floor(timeDiff / 12);
+        const currentBlock = await etherscanService.getLatestBlockNumber();
+        blockNumber = Math.max(0, currentBlock - estimatedBlocksAgo);
+      }
       
       // Get balance at that block
       const balance = await etherscanService.getBalance(validAddress, blockNumber);
@@ -393,15 +414,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get current balance first
       const currentBalance = await etherscanService.getBalance(address);
       
-      // Sample points over the time period
-      for (let i = 0; i < daysCount; i += Math.max(1, Math.floor(daysCount / 20))) {
+      // Sample fewer points to reduce API calls and avoid rate limits
+      const maxPoints = 10; // Reduce from 20 to 10 points
+      const step = Math.max(1, Math.floor(daysCount / maxPoints));
+      
+      for (let i = 0; i < daysCount; i += step) {
         try {
           const daysAgo = daysCount - i;
           const targetDate = new Date(currentTime - (daysAgo * 24 * 60 * 60 * 1000));
           const timestamp = Math.floor(targetDate.getTime() / 1000);
           
-          // Get block number for that timestamp
-          const blockNumber = await etherscanService.getBlockByTimestamp(timestamp);
+          // Get block number for that timestamp with error handling
+          let blockNumber;
+          try {
+            blockNumber = await etherscanService.getBlockByTimestamp(timestamp);
+          } catch (blockError) {
+            console.warn(`Using estimated block for ${daysAgo} days ago due to API limitation`);
+            // Estimate block number (12 seconds per block average)
+            const currentBlock = await etherscanService.getLatestBlockNumber();
+            blockNumber = Math.max(0, currentBlock - Math.floor((daysAgo * 24 * 60 * 60) / 12));
+          }
           
           // Get balance at that block
           const balance = await etherscanService.getBalance(address, blockNumber);
@@ -414,10 +446,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             balanceEth: (BigInt(balance) / BigInt("1000000000000000000")).toString()
           });
           
-          // Add small delay to respect rate limits
-          await new Promise(resolve => setTimeout(resolve, 200));
+          // Increased delay to respect rate limits
+          await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
-          console.warn(`Failed to fetch balance for ${daysCount - i} days ago:`, error);
+          console.warn(`Skipping balance for ${daysCount - i} days ago:`, error);
+          // Continue with other data points instead of failing completely
         }
       }
       
