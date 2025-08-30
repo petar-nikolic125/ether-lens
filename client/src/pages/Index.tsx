@@ -24,10 +24,7 @@ const Index = () => {
       {/* Hero Section with Trust the Source */}
       <HeroSection onSearch={setSearchData} />
 
-      {/* Ethereum Dashboard - Main Content */}
-      <EthereumDashboard />
-
-      {/* Search-based Analysis (when user searches) */}
+      {/* Search-based Analysis (when user searches) - Right after search form */}
       {searchData && (
         <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-8">
           <div className="border-t border-border pt-8">
@@ -68,6 +65,9 @@ const Index = () => {
           </div>
         </main>
       )}
+
+      {/* Ethereum Dashboard - Main Content */}
+      <EthereumDashboard />
 
     </div>
   );
