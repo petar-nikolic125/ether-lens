@@ -1,7 +1,12 @@
 import React, { useEffect } from "react";
 import { Search, ChevronDown, Bell, User, Home, Activity, Database, Coins, FileText, HelpCircle, Settings } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 export const Header: React.FC = () => {
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
+
   // Update header with live data
   useEffect(() => {
     const updateHeaderData = async () => {
@@ -73,35 +78,35 @@ export const Header: React.FC = () => {
 
             {/* Navigation links */}
             <nav className="hidden lg:flex items-center gap-6">
-              <div className="flex items-center gap-1 text-foreground font-semibold cursor-pointer">
+              <Link to="/" className={`flex items-center gap-1 transition-colors ${isActive('/') ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`} data-testid="nav-home">
                 <Home className="w-4 h-4" />
                 <span className="font-inter">Home</span>
-              </div>
+              </Link>
               
-              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              <Link to="/latest-blocks" className={`flex items-center gap-1 transition-colors ${isActive('/latest-blocks') ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`} data-testid="nav-latest-blocks">
                 <Database className="w-4 h-4" />
                 <span className="font-inter">Latest Blocks</span>
-              </div>
+              </Link>
 
-              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              <Link to="/latest-transactions" className={`flex items-center gap-1 transition-colors ${isActive('/latest-transactions') ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`} data-testid="nav-latest-transactions">
                 <Activity className="w-4 h-4" />
                 <span className="font-inter">Latest Transactions</span>
-              </div>
+              </Link>
 
-              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              <Link to="/token-tracker" className={`flex items-center gap-1 transition-colors ${isActive('/token-tracker') ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`} data-testid="nav-token-tracker">
                 <Coins className="w-4 h-4" />
                 <span className="font-inter">Token Tracker</span>
-              </div>
+              </Link>
 
-              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              <Link to="/wallet-analyzer" className={`flex items-center gap-1 transition-colors ${isActive('/wallet-analyzer') ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`} data-testid="nav-wallet-analyzer">
                 <FileText className="w-4 h-4" />
                 <span className="font-inter">Wallet Analyzer</span>
-              </div>
+              </Link>
 
-              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              <Link to="/api-docs" className={`flex items-center gap-1 transition-colors ${isActive('/api-docs') ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'}`} data-testid="nav-api-docs">
                 <HelpCircle className="w-4 h-4" />
                 <span className="font-inter">API Docs</span>
-              </div>
+              </Link>
             </nav>
           </div>
 
