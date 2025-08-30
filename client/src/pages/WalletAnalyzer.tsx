@@ -22,6 +22,17 @@ const WalletAnalyzer = () => {
   const [activeWallet, setActiveWallet] = useState<{address: string, startBlock: string} | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Fetch comprehensive wallet analysis data
+  const { data: analysisData, isLoading: analysisLoading } = useQuery({
+    queryKey: ['wallet-analysis', activeWallet?.address, activeWallet?.startBlock],
+    queryFn: async () => {
+      const response = await fetch(`/api/wallet/${activeWallet!.address}/analyze?startBlock=${activeWallet!.startBlock}`);
+      if (!response.ok) throw new Error('Failed to fetch comprehensive analysis');
+      return response.json();
+    },
+    enabled: !!activeWallet?.address && !!activeWallet?.startBlock,
+  });
+
   const { data: walletData, isLoading, error } = useQuery({
     queryKey: ['wallet-transactions', activeWallet?.address, activeWallet?.startBlock],
     queryFn: async () => {
@@ -118,8 +129,8 @@ const WalletAnalyzer = () => {
               Analysis for {activeWallet.address.slice(0, 8)}...{activeWallet.address.slice(-6)}
             </h2>
             
-            {/* Stats Cards */}
-            {(walletData as any)?.stats && (
+            {/* Comprehensive Stats Cards */}
+            {(analysisData?.stats || walletData?.stats) && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <Card className="ot-card">
                   <CardContent className="py-4">
@@ -128,7 +139,7 @@ const WalletAnalyzer = () => {
                       <div>
                         <p className="text-sm text-muted-foreground">Total Transactions</p>
                         <p className="text-2xl font-bold" data-testid="stat-total-transactions">
-                          {(walletData as any)?.stats?.totalTransactions}
+                          {(analysisData?.stats?.totalTransactions || (walletData as any)?.stats?.totalTransactions || 0).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -142,7 +153,7 @@ const WalletAnalyzer = () => {
                       <div>
                         <p className="text-sm text-muted-foreground">Incoming</p>
                         <p className="text-2xl font-bold text-success" data-testid="stat-incoming-transactions">
-                          {(walletData as any)?.stats?.incomingTransactions}
+                          {(analysisData?.stats?.incomingTransactions || (walletData as any)?.stats?.incomingTransactions || 0).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -156,7 +167,7 @@ const WalletAnalyzer = () => {
                       <div>
                         <p className="text-sm text-muted-foreground">Outgoing</p>
                         <p className="text-2xl font-bold text-destructive" data-testid="stat-outgoing-transactions">
-                          {(walletData as any)?.stats?.outgoingTransactions}
+                          {(analysisData?.stats?.outgoingTransactions || (walletData as any)?.stats?.outgoingTransactions || 0).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -170,7 +181,8 @@ const WalletAnalyzer = () => {
                       <div>
                         <p className="text-sm text-muted-foreground">Current Balance</p>
                         <p className="text-2xl font-bold" data-testid="stat-current-balance">
-                          {(balanceData as any)?.balanceEth ? parseFloat((balanceData as any).balanceEth).toFixed(4) : '0.0000'} ETH
+                          {(analysisData?.stats?.currentBalanceEth || (balanceData as any)?.balanceEth) ? 
+                            parseFloat(analysisData?.stats?.currentBalanceEth || (balanceData as any).balanceEth).toFixed(4) : '0.0000'} ETH
                         </p>
                       </div>
                     </div>
@@ -212,7 +224,89 @@ const WalletAnalyzer = () => {
                 {/* Charts Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <BalanceChart address={activeWallet.address} />
-                  <HistoricalBalance address={activeWallet.address} />
+                  
+                  {/* Comprehensive Analysis Panel */}
+                  {analysisData && (
+                    <Card className="ot-card">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Activity className="w-5 h-5 text-origin-purple" />
+                          Wallet Analysis
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-4 bg-secondary/20 rounded-lg">
+                              <div className="text-2xl font-bold text-origin-teal" data-testid="analysis-total-volume">
+                                {(Number(analysisData.stats.totalVolume) / 1e18).toFixed(2)} ETH
+                              </div>
+                              <div className="text-sm text-muted-foreground">Total Volume</div>
+                            </div>
+                            <div className="text-center p-4 bg-secondary/20 rounded-lg">
+                              <div className="text-2xl font-bold text-origin-cyan" data-testid="analysis-token-count">
+                                {analysisData.stats.tokenCount}
+                              </div>
+                              <div className="text-sm text-muted-foreground">Unique Tokens</div>
+                            </div>
+                          </div>
+                          
+                          {/* Activity Range */}
+                          <div className="p-4 bg-gradient-primary/10 rounded-lg border border-origin-purple/20">
+                            <h4 className="font-semibold mb-2 flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              Activity Range
+                            </h4>
+                            <div className="text-sm space-y-1">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">First Activity:</span>
+                                <span className="font-mono">Block #{analysisData.stats.firstActivityBlock.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Latest Activity:</span>
+                                <span className="font-mono">Block #{analysisData.stats.lastActivityBlock.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Most Used Functions */}
+                          {analysisData.analysis.mostUsedFunction.length > 0 && (
+                            <div className="p-4 bg-origin-cyan/10 rounded-lg border border-origin-cyan/20">
+                              <h4 className="font-semibold mb-2 flex items-center gap-2">
+                                <Hash className="w-4 h-4" />
+                                Most Used Functions
+                              </h4>
+                              <div className="space-y-2">
+                                {analysisData.analysis.mostUsedFunction.map((func: any, index: number) => (
+                                  <div key={index} className="flex justify-between items-center">
+                                    <Badge variant="secondary" className="font-mono text-xs">
+                                      {func.name}
+                                    </Badge>
+                                    <span className="text-sm font-semibold">{func.count}x</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Average Gas & Transaction Value */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-3 bg-secondary/10 rounded-lg">
+                              <div className="text-lg font-bold">{Math.round(analysisData.analysis.averageGasUsage).toLocaleString()}</div>
+                              <div className="text-xs text-muted-foreground">Avg Gas Used</div>
+                            </div>
+                            <div className="text-center p-3 bg-secondary/10 rounded-lg">
+                              <div className="text-lg font-bold">{analysisData.analysis.averageTransactionValue.toFixed(4)} ETH</div>
+                              <div className="text-xs text-muted-foreground">Avg TX Value</div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  {/* Fallback to Historical Balance if analysis not available */}
+                  {!analysisData && <HistoricalBalance address={activeWallet.address} />}
                 </div>
 
                 {/* Quick Transaction Overview */}

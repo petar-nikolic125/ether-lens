@@ -3,6 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 
+// Load environment variables first, before any other imports
+import { config } from "dotenv";
+config();
+
 // Etherscan API service
 class EtherscanService {
   public baseUrl = "https://api.etherscan.io/v2/api";
@@ -360,6 +364,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch historical balance" });
     }
   });
+
+  // Get comprehensive wallet analysis
+  app.get("/api/wallet/:address/analyze", async (req, res) => {
+    try {
+      const { address } = req.params;
+      const { startBlock = "9000000" } = req.query;
+      
+      const validation = searchSchema.safeParse({ address, startBlock });
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.issues[0].message });
+      }
+
+      const { address: validAddress, startBlock: validStartBlock } = validation.data;
+
+      // Fetch all data in parallel
+      const [
+        transactions,
+        tokenTransfers,
+        internalTxs,
+        nftTransfers,
+        currentBalance
+      ] = await Promise.all([
+        etherscanService.getTransactions(validAddress, validStartBlock),
+        etherscanService.getTokenTransfers(validAddress, validStartBlock),
+        etherscanService.getInternalTransactions(validAddress, validStartBlock),
+        etherscanService.getNFTTransfers(validAddress, validStartBlock),
+        etherscanService.getBalance(validAddress)
+      ]);
+
+      // Process transactions with method details
+      const processedTransactions = transactions.map((tx: any) => ({
+        hash: tx.hash,
+        blockNumber: parseInt(tx.blockNumber),
+        blockHash: tx.blockHash,
+        fromAddress: tx.from.toLowerCase(),
+        toAddress: tx.to?.toLowerCase() || null,
+        value: tx.value,
+        gasUsed: parseInt(tx.gasUsed),
+        gasPrice: parseInt(tx.gasPrice),
+        timestamp: new Date(parseInt(tx.timeStamp) * 1000),
+        isError: tx.isError === "1",
+        methodId: tx.methodId || "0x",
+        functionName: tx.functionName || "Transfer",
+        inputData: tx.input || "0x"
+      }));
+
+      // Process token transfers
+      const processedTokenTransfers = tokenTransfers.map((transfer: any) => ({
+        transactionHash: transfer.hash,
+        blockNumber: parseInt(transfer.blockNumber),
+        fromAddress: transfer.from.toLowerCase(),
+        toAddress: transfer.to.toLowerCase(), 
+        contractAddress: transfer.contractAddress.toLowerCase(),
+        value: transfer.value,
+        tokenName: transfer.tokenName,
+        tokenSymbol: transfer.tokenSymbol,
+        tokenDecimals: parseInt(transfer.tokenDecimal),
+        timestamp: new Date(parseInt(transfer.timeStamp) * 1000),
+      }));
+
+      // Calculate comprehensive stats
+      const incomingTxs = processedTransactions.filter((tx: any) => 
+        tx.toAddress?.toLowerCase() === validAddress.toLowerCase()
+      );
+      const outgoingTxs = processedTransactions.filter((tx: any) => 
+        tx.fromAddress.toLowerCase() === validAddress.toLowerCase()
+      );
+
+      const totalReceived = incomingTxs.reduce((sum: bigint, tx: any) => sum + BigInt(tx.value), BigInt(0));
+      const totalSent = outgoingTxs.reduce((sum: bigint, tx: any) => sum + BigInt(tx.value), BigInt(0));
+      const totalVolume = totalReceived + totalSent;
+
+      // Group token transfers by token
+      const tokenBalances = processedTokenTransfers.reduce((acc: Record<string, any>, transfer: any) => {
+        const key = transfer.contractAddress;
+        if (!acc[key]) {
+          acc[key] = {
+            contractAddress: transfer.contractAddress,
+            tokenName: transfer.tokenName,
+            tokenSymbol: transfer.tokenSymbol,
+            tokenDecimals: transfer.tokenDecimals,
+            balance: BigInt(0),
+            incoming: 0,
+            outgoing: 0,
+          };
+        }
+        
+        const isIncoming = transfer.toAddress.toLowerCase() === validAddress.toLowerCase();
+        const value = BigInt(transfer.value);
+        
+        if (isIncoming) {
+          acc[key].balance += value;
+          acc[key].incoming++;
+        } else {
+          acc[key].balance -= value;
+          acc[key].outgoing++;
+        }
+        
+        return acc;
+      }, {});
+
+      // Convert BigInt balances to strings for JSON serialization
+      const tokenBalancesSerialized = Object.values(tokenBalances).map((token: any) => ({
+        ...token,
+        balance: token.balance.toString(),
+      }));
+
+      const stats = {
+        totalTransactions: processedTransactions.length,
+        incomingTransactions: incomingTxs.length,
+        outgoingTransactions: outgoingTxs.length,
+        totalReceived: totalReceived.toString(),
+        totalSent: totalSent.toString(),
+        totalVolume: totalVolume.toString(),
+        netBalance: (totalReceived - totalSent).toString(),
+        currentBalance: currentBalance,
+        currentBalanceEth: (BigInt(currentBalance) / BigInt("1000000000000000000")).toString(),
+        firstActivityBlock: processedTransactions.length > 0 ? Math.min(...processedTransactions.map(tx => tx.blockNumber)) : validStartBlock,
+        lastActivityBlock: processedTransactions.length > 0 ? Math.max(...processedTransactions.map(tx => tx.blockNumber)) : validStartBlock,
+        tokenCount: Object.keys(tokenBalances).length,
+        nftTransferCount: nftTransfers.length,
+        internalTxCount: internalTxs.length,
+      };
+
+      res.json({
+        address: validAddress,
+        startBlock: validStartBlock,
+        stats,
+        transactions: processedTransactions,
+        tokenTransfers: processedTokenTransfers,
+        tokenBalances: tokenBalancesSerialized,
+        internalTransactions: internalTxs,
+        nftTransfers,
+        analysis: {
+          isActive: processedTransactions.length > 0,
+          mostUsedFunction: getMostUsedFunction(processedTransactions),
+          averageGasUsage: processedTransactions.reduce((sum: number, tx: any) => sum + tx.gasUsed, 0) / processedTransactions.length || 0,
+          averageTransactionValue: Number(totalVolume) / (processedTransactions.length * 1e18) || 0,
+        }
+      });
+
+    } catch (error) {
+      console.error("Error in comprehensive wallet analysis:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to analyze wallet";
+      res.status(500).json({ error: errorMessage });
+    }
+  });
+
+  function getMostUsedFunction(transactions: { functionName?: string }[]) {
+    const functionCounts = transactions.reduce((acc: Record<string, number>, tx: any) => {
+      const func = tx.functionName || "Transfer";
+      acc[func] = (acc[func] || 0) + 1;
+      return acc;
+    }, {});
+    
+    return Object.entries(functionCounts)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .slice(0, 3)
+      .map(([name, count]) => ({ name, count }));
+  }
 
   // Get token transfers (bonus feature)
   app.get("/api/wallet/:address/tokens", async (req, res) => {
