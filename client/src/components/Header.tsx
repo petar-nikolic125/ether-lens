@@ -1,11 +1,75 @@
-import React from "react";
-import { Search, Home, Activity, Database, Coins, FileText, HelpCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Search, Home, Activity, Database, Coins, FileText, HelpCircle, Wallet } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
 
 export const Header: React.FC = () => {
   const location = useLocation();
+  const [account, setAccount] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Check if MetaMask is available
+  const isMetaMaskAvailable = typeof window !== 'undefined' && typeof (window as any).ethereum !== 'undefined';
+
+  // Check for existing connection on load
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (isMetaMaskAvailable) {
+        try {
+          const accounts = await (window as any).ethereum.request({ method: 'eth_accounts' });
+          if (accounts.length > 0) {
+            setAccount(accounts[0]);
+          }
+        } catch (error) {
+          console.log('Not connected to MetaMask');
+        }
+      }
+    };
+    checkConnection();
+  }, [isMetaMaskAvailable]);
+
+  const connectWallet = async () => {
+    if (!isMetaMaskAvailable) {
+      toast({
+        title: "MetaMask Not Found",
+        description: "Please install MetaMask to connect your wallet.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      const accounts = await (window as any).ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+      
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+        toast({
+          title: "Wallet Connected",
+          description: `Connected to ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Failed to connect wallet",
+        variant: "destructive",
+      });
+    }
+    setIsConnecting(false);
+  };
+
+  const disconnectWallet = () => {
+    setAccount(null);
+    toast({
+      title: "Wallet Disconnected",
+      description: "Your wallet has been disconnected"
+    });
+  };
 
 
   return (
@@ -66,9 +130,31 @@ export const Header: React.FC = () => {
                 className="ot-input w-80 pl-10 pr-4 py-2 text-sm"
               />
             </div>
-            <button className="btn btn-primary text-sm px-4 py-2">
-              Sign In
-            </button>
+            {account ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-lg px-3 py-2">
+                  <Wallet className="w-4 h-4 text-primary" />
+                  <span className="font-mono text-sm text-primary">
+                    {account.slice(0, 6)}...{account.slice(-4)}
+                  </span>
+                </div>
+                <button 
+                  onClick={disconnectWallet}
+                  className="btn btn-outline text-sm px-3 py-2"
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={connectWallet}
+                disabled={isConnecting}
+                className="btn btn-primary text-sm px-4 py-2 flex items-center gap-2"
+              >
+                <Wallet className="w-4 h-4" />
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              </button>
+            )}
           </div>
         </div>
       </div>
