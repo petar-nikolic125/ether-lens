@@ -1,18 +1,16 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { eq, and } from "drizzle-orm";
+import { eq, or, and } from "drizzle-orm";
 import { 
   users, wallets, transactions, tokenTransfers, balanceHistory,
   type User, type InsertUser, type Wallet, type Transaction, 
   type TokenTransfer, type BalanceHistory 
 } from "@shared/schema";
+import { InMemoryStorage } from "./in-memory-storage";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set");
-}
-
-const sql = neon(process.env.DATABASE_URL);
-const db = drizzle(sql);
+// Create database connection only if DATABASE_URL is available
+const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
+const db = sql ? drizzle(sql) : null;
 
 export interface IStorage {
   // User methods
@@ -38,19 +36,25 @@ export interface IStorage {
 }
 
 export class DrizzleStorage implements IStorage {
+  private db: NonNullable<typeof db>;
+  
+  constructor(database: NonNullable<typeof db>) {
+    this.db = database;
+  }
+  
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
     return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
     return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
+    const result = await this.db.insert(users).values(insertUser).returning();
     return result[0];
   }
 
@@ -59,14 +63,14 @@ export class DrizzleStorage implements IStorage {
     const existing = await this.getWallet(address);
     
     if (existing) {
-      const result = await db
+      const result = await this.db
         .update(wallets)
         .set({ lastScannedBlock })
         .where(eq(wallets.address, address.toLowerCase()))
         .returning();
       return result[0];
     } else {
-      const result = await db
+      const result = await this.db
         .insert(wallets)
         .values({ 
           address: address.toLowerCase(), 
@@ -78,7 +82,7 @@ export class DrizzleStorage implements IStorage {
   }
 
   async getWallet(address: string): Promise<Wallet | undefined> {
-    const result = await db
+    const result = await this.db
       .select()
       .from(wallets)
       .where(eq(wallets.address, address.toLowerCase()))
@@ -90,7 +94,7 @@ export class DrizzleStorage implements IStorage {
   async upsertTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction> {
     try {
       // Check if transaction already exists
-      const existing = await db
+      const existing = await this.db
         .select()
         .from(transactions)
         .where(eq(transactions.hash, transaction.hash))
@@ -101,7 +105,7 @@ export class DrizzleStorage implements IStorage {
       }
       
       // Insert new transaction
-      const result = await db
+      const result = await this.db
         .insert(transactions)
         .values({
           ...transaction,
@@ -114,7 +118,7 @@ export class DrizzleStorage implements IStorage {
     } catch (error) {
       console.error("Error upserting transaction:", error);
       // Return existing if insert failed due to conflict
-      const existing = await db
+      const existing = await this.db
         .select()
         .from(transactions)
         .where(eq(transactions.hash, transaction.hash))
@@ -125,11 +129,11 @@ export class DrizzleStorage implements IStorage {
 
   async getTransactionsByWallet(address: string, limit: number = 50): Promise<Transaction[]> {
     const lowerAddress = address.toLowerCase();
-    return await db
+    return await this.db
       .select()
       .from(transactions)
       .where(
-        and(
+        or(
           eq(transactions.fromAddress, lowerAddress),
           eq(transactions.toAddress, lowerAddress)
         )
@@ -142,7 +146,7 @@ export class DrizzleStorage implements IStorage {
   async upsertTokenTransfer(transfer: Omit<TokenTransfer, 'id' | 'createdAt'>): Promise<TokenTransfer> {
     try {
       // Check if transfer already exists
-      const existing = await db
+      const existing = await this.db
         .select()
         .from(tokenTransfers)
         .where(
@@ -158,7 +162,7 @@ export class DrizzleStorage implements IStorage {
       }
       
       // Insert new transfer
-      const result = await db
+      const result = await this.db
         .insert(tokenTransfers)
         .values({
           ...transfer,
@@ -172,7 +176,7 @@ export class DrizzleStorage implements IStorage {
     } catch (error) {
       console.error("Error upserting token transfer:", error);
       // Return existing if insert failed due to conflict
-      const existing = await db
+      const existing = await this.db
         .select()
         .from(tokenTransfers)
         .where(
@@ -188,11 +192,11 @@ export class DrizzleStorage implements IStorage {
 
   async getTokenTransfersByWallet(address: string, limit: number = 50): Promise<TokenTransfer[]> {
     const lowerAddress = address.toLowerCase();
-    return await db
+    return await this.db
       .select()
       .from(tokenTransfers)
       .where(
-        and(
+        or(
           eq(tokenTransfers.fromAddress, lowerAddress),
           eq(tokenTransfers.toAddress, lowerAddress)
         )
@@ -203,7 +207,7 @@ export class DrizzleStorage implements IStorage {
 
   // Balance history methods
   async saveBalanceHistory(balanceData: Omit<BalanceHistory, 'id' | 'createdAt'>): Promise<BalanceHistory> {
-    const result = await db
+    const result = await this.db
       .insert(balanceHistory)
       .values({
         ...balanceData,
@@ -214,7 +218,7 @@ export class DrizzleStorage implements IStorage {
   }
 
   async getBalanceHistory(address: string, limit: number = 100): Promise<BalanceHistory[]> {
-    return await db
+    return await this.db
       .select()
       .from(balanceHistory)
       .where(eq(balanceHistory.walletAddress, address.toLowerCase()))
@@ -223,4 +227,5 @@ export class DrizzleStorage implements IStorage {
   }
 }
 
-export const storage = new DrizzleStorage();
+// Export appropriate storage implementation based on DATABASE_URL availability
+export const storage: IStorage = db ? new DrizzleStorage(db) : new InMemoryStorage();
