@@ -420,6 +420,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get token balance at specific date
+  app.get("/api/wallet/:address/token-balance-at-date", async (req, res) => {
+    try {
+      const { address } = req.params;
+      const { date, contractAddress } = req.query;
+      
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+        return res.status(400).json({ error: "Invalid Ethereum address" });
+      }
+      
+      if (!contractAddress || !/^0x[a-fA-F0-9]{40}$/.test(contractAddress as string)) {
+        return res.status(400).json({ error: "Invalid token contract address" });
+      }
+      
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date as string)) {
+        return res.status(400).json({ error: "Invalid date format. Use YYYY-MM-DD" });
+      }
+
+      // Convert date to timestamp (00:00 UTC)
+      const targetDate = new Date(`${date}T00:00:00Z`);
+      const timestamp = Math.floor(targetDate.getTime() / 1000);
+      
+      // Get all token transfers up to the target date
+      const tokenTransfers = await etherscanService.getTokenTransfers(address, 0);
+      
+      // Filter transfers for the specific token and up to the target date
+      const relevantTransfers = tokenTransfers.filter((tx: any) => {
+        return tx.contractAddress.toLowerCase() === (contractAddress as string).toLowerCase() &&
+               parseInt(tx.timeStamp) <= timestamp;
+      });
+      
+      // Calculate balance by summing all transfers
+      let balance = BigInt(0);
+      let tokenInfo: any = null;
+      
+      for (const transfer of relevantTransfers) {
+        if (!tokenInfo && transfer.tokenName) {
+          tokenInfo = {
+            name: transfer.tokenName,
+            symbol: transfer.tokenSymbol,
+            decimals: parseInt(transfer.tokenDecimal)
+          };
+        }
+        
+        const value = BigInt(transfer.value || '0');
+        
+        // Add incoming transfers, subtract outgoing
+        if (transfer.to.toLowerCase() === address.toLowerCase()) {
+          balance += value;
+        } else if (transfer.from.toLowerCase() === address.toLowerCase()) {
+          balance -= value;
+        }
+      }
+      
+      // Convert balance to human readable format
+      const decimals = tokenInfo?.decimals || 18;
+      const divisor = BigInt(10 ** decimals);
+      const balanceFloat = Number(balance) / Number(divisor);
+      
+      // Get estimated block number for the date
+      let blockNumber;
+      try {
+        blockNumber = await etherscanService.getBlockByTimestamp(timestamp);
+      } catch (error) {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const timeDiff = currentTime - timestamp;
+        const estimatedBlocksAgo = Math.floor(timeDiff / 12);
+        const currentBlock = await etherscanService.getLatestBlockNumber();
+        blockNumber = Math.max(0, currentBlock - estimatedBlocksAgo);
+      }
+      
+      res.json({
+        address,
+        contractAddress,
+        date,
+        blockNumber,
+        timestamp,
+        balance: balance.toString(),
+        balanceFormatted: balanceFloat.toFixed(6),
+        tokenInfo: tokenInfo || {
+          name: "Unknown Token",
+          symbol: "???",
+          decimals: 18
+        },
+        transferCount: relevantTransfers.length
+      });
+      
+    } catch (error) {
+      console.error("Error fetching token balance at date:", error);
+      res.status(500).json({ error: "Failed to fetch token balance" });
+    }
+  });
+
   // Get balance evolution over time
   app.get("/api/wallet/:address/balance-evolution", async (req, res) => {
     try {
