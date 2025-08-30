@@ -495,7 +495,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/eth-price-history", async (req, res) => {
     try {
       const daysParam = req.query.days || '7';
-      const days = parseInt(Array.isArray(daysParam) ? daysParam[0] : String(daysParam));
+      const daysString = Array.isArray(daysParam) ? daysParam[0] : daysParam;
+      const days = parseInt(typeof daysString === 'string' ? daysString : '7');
       const validDays = isNaN(days) ? 7 : Math.max(1, Math.min(days, 365)); // Limit between 1-365 days
       const priceResponse = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=${validDays}&interval=${validDays <= 1 ? 'hourly' : 'daily'}`);
       const priceData = await priceResponse.json();

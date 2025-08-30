@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { LimitlessVisualizer } from "./LimitlessVisualizer";
+import { SearchForm } from "./SearchForm";
 
-export const HeroSection: React.FC = () => {
+interface HeroSectionProps {
+  onSearch?: (data: { address: string; startBlock: string }) => void;
+}
+
+export const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
   return (
     <header className="relative overflow-hidden bg-background">
       {/* Trust the Source Hero Section */}
@@ -69,11 +74,16 @@ export const HeroSection: React.FC = () => {
         </div>
 
         {/* Subtitle */}
-        <div className="text-center mt-8 mb-16">
+        <div className="text-center mt-8 mb-12">
           <p className="font-inter text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
             Advanced Ethereum blockchain explorer and transaction crawler. 
             Analyze wallet activities and explore transaction flows with comprehensive insights.
           </p>
+        </div>
+
+        {/* Search Form */}
+        <div className="max-w-4xl mx-auto mb-16">
+          {onSearch && <SearchForm onSearch={onSearch} />}
         </div>
 
         {/* Divider */}

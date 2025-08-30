@@ -19,7 +19,7 @@ const Index = () => {
       <Header />
       
       {/* Hero Section with Trust the Source */}
-      <HeroSection />
+      <HeroSection onSearch={setSearchData} />
 
       {/* Ethereum Dashboard - Main Content */}
       <EthereumDashboard />
@@ -66,12 +66,6 @@ const Index = () => {
         </main>
       )}
 
-      {/* Search Form - Fixed position overlay */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 max-w-md">
-          <SearchForm onSearch={setSearchData} />
-        </div>
-      </div>
     </div>
   );
 };

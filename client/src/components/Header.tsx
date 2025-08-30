@@ -1,7 +1,40 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Search, ChevronDown, Bell, User, Home, Activity, Database, Coins, FileText, HelpCircle, Settings } from "lucide-react";
 
 export const Header: React.FC = () => {
+  // Update header with live data
+  useEffect(() => {
+    const updateHeaderData = async () => {
+      try {
+        const response = await fetch('/api/network-stats');
+        const data = await response.json();
+        
+        if (data.stats) {
+          const ethPriceElement = document.getElementById('eth-price');
+          const gasPriceElement = document.getElementById('gas-price');
+          
+          const ethPriceStat = data.stats.find((stat: any) => stat.title === 'ETHER PRICE');
+          const gasPriceStat = data.stats.find((stat: any) => stat.title === 'GAS PRICE');
+          
+          if (ethPriceElement && ethPriceStat) {
+            ethPriceElement.textContent = ethPriceStat.value;
+          }
+          
+          if (gasPriceElement && gasPriceStat) {
+            gasPriceElement.textContent = gasPriceStat.value;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to update header data:', error);
+      }
+    };
+
+    updateHeaderData();
+    const interval = setInterval(updateHeaderData, 30000); // Update every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header className="bg-background border-b border-border/20">
       {/* Top bar with ETH price */}
@@ -11,12 +44,11 @@ export const Header: React.FC = () => {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground font-inter">ETH Price:</span>
-                <span className="text-success font-semibold">$4,361.44</span>
-                <span className="text-success text-xs">(+1.8%)</span>
+                <span className="text-success font-semibold" id="eth-price">Loading...</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground font-inter">Gas:</span>
-                <span className="text-foreground">5 Gwei</span>
+                <span className="text-foreground" id="gas-price">Loading...</span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -41,44 +73,34 @@ export const Header: React.FC = () => {
 
             {/* Navigation links */}
             <nav className="hidden lg:flex items-center gap-6">
-              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+              <div className="flex items-center gap-1 text-foreground font-semibold cursor-pointer">
                 <Home className="w-4 h-4" />
                 <span className="font-inter">Home</span>
               </div>
               
               <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                 <Database className="w-4 h-4" />
-                <span className="font-inter">Blockchain</span>
-                <ChevronDown className="w-3 h-3" />
-              </div>
-
-              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                <Coins className="w-4 h-4" />
-                <span className="font-inter">Tokens</span>
-                <ChevronDown className="w-3 h-3" />
-              </div>
-
-              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                <FileText className="w-4 h-4" />
-                <span className="font-inter">NFTs</span>
-                <ChevronDown className="w-3 h-3" />
+                <span className="font-inter">Latest Blocks</span>
               </div>
 
               <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                 <Activity className="w-4 h-4" />
-                <span className="font-inter">Resources</span>
-                <ChevronDown className="w-3 h-3" />
+                <span className="font-inter">Latest Transactions</span>
               </div>
 
               <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                <Settings className="w-4 h-4" />
-                <span className="font-inter">Developers</span>
-                <ChevronDown className="w-3 h-3" />
+                <Coins className="w-4 h-4" />
+                <span className="font-inter">Token Tracker</span>
               </div>
 
               <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                <span className="font-inter">More</span>
-                <ChevronDown className="w-3 h-3" />
+                <FileText className="w-4 h-4" />
+                <span className="font-inter">Wallet Analyzer</span>
+              </div>
+
+              <div className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                <HelpCircle className="w-4 h-4" />
+                <span className="font-inter">API Docs</span>
               </div>
             </nav>
           </div>
