@@ -14,13 +14,16 @@ class EtherscanService {
     const response = await fetch(url);
     const data = await response.json();
     
+    console.log("Etherscan transactions API response:", data);
+    
     // Handle "No transactions found" case - this is normal and not an error
     if (data.status === "0" && data.message === "No transactions found") {
       return [];
     }
     
     if (data.status !== "1") {
-      throw new Error(data.message || "Failed to fetch transactions");
+      console.error("Etherscan API error:", data);
+      throw new Error(data.message || data.result || "Failed to fetch transactions");
     }
     
     return data.result || [];
@@ -32,13 +35,16 @@ class EtherscanService {
     const response = await fetch(url);
     const data = await response.json();
     
+    console.log("Etherscan token transfers API response:", data);
+    
     // Handle "No transactions found" case - this is normal and not an error
     if (data.status === "0" && data.message === "No transactions found") {
       return [];
     }
     
     if (data.status !== "1") {
-      throw new Error(data.message || "Failed to fetch token transfers");
+      console.error("Etherscan token API error:", data);
+      throw new Error(data.message || data.result || "Failed to fetch token transfers");
     }
     
     return data.result || [];
@@ -51,8 +57,11 @@ class EtherscanService {
     const response = await fetch(url);
     const data = await response.json();
     
+    console.log("Etherscan balance API response:", data);
+    
     if (data.status !== "1") {
-      throw new Error(data.message || "Failed to fetch balance");
+      console.error("Etherscan balance API error:", data);
+      throw new Error(data.message || data.result || "Failed to fetch balance");
     }
     
     return data.result;

@@ -231,6 +231,7 @@ export const TokenTransfers = ({ address, startBlock }: TokenTransfersProps) => 
                           size="sm"
                           className="w-5 h-5 p-0 hover:bg-origin-purple/20"
                           aria-label="View transaction"
+                          onClick={() => window.open(`https://etherscan.io/tx/${transfer.transactionHash}`, '_blank')}
                         >
                           <ExternalLink className="w-3 h-3" />
                         </Button>
