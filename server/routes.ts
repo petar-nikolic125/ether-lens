@@ -464,7 +464,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn("Failed to fetch gas price:", gasError);
       }
       
-      res.json({ stats });
+      // Add exact timestamp to response
+      const response = {
+        stats,
+        lastUpdated: new Date().toISOString(),
+        timestamp: Date.now()
+      };
+      
+      res.json(response);
     } catch (error) {
       console.error("Error fetching network stats:", error);
       // Return default stats even if there's an error
@@ -476,7 +483,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { title: "CONFIRMATIONS", value: "12 blocks" },
         { title: "STATUS", value: "Error" }
       ];
-      res.json({ stats: fallbackStats });
+      res.json({ 
+        stats: fallbackStats,
+        lastUpdated: new Date().toISOString(),
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  // Get ETH price history for charts
+  app.get("/api/eth-price-history", async (req, res) => {
+    try {
+      const days = req.query.days || '7';
+      const priceResponse = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=${days}&interval=${days <= 1 ? 'hourly' : 'daily'}`);
+      const priceData = await priceResponse.json();
+      
+      if (priceData.prices) {
+        const chartData = priceData.prices.map((price: [number, number]) => ({
+          timestamp: price[0],
+          price: price[1],
+          date: new Date(price[0]).toISOString()
+        }));
+        
+        res.json({ 
+          data: chartData,
+          lastUpdated: new Date().toISOString(),
+          period: `${days} days`
+        });
+      } else {
+        res.json({ data: [], lastUpdated: new Date().toISOString(), period: `${days} days` });
+      }
+    } catch (error) {
+      console.error("Error fetching ETH price history:", error);
+      res.json({ data: [], lastUpdated: new Date().toISOString(), period: "N/A" });
+    }
+  });
+
+  // Get network activity metrics
+  app.get("/api/network-activity", async (req, res) => {
+    try {
+      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (!data.result) {
+        return res.json({ 
+          metrics: [],
+          lastUpdated: new Date().toISOString()
+        });
+      }
+      
+      const latestBlockNumber = parseInt(data.result, 16);
+      const metrics = [];
+      
+      if (!isNaN(latestBlockNumber)) {
+        // Get data for last 10 blocks for activity chart
+        for (let i = 9; i >= 0; i--) {
+          try {
+            const blockNumber = latestBlockNumber - i;
+            const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+            const blockResponse = await fetch(blockUrl);
+            const blockData = await blockResponse.json();
+            
+            if (blockData.result && blockData.result.timestamp) {
+              const block = blockData.result;
+              const timestamp = parseInt(block.timestamp, 16) * 1000;
+              const gasUsed = block.gasUsed ? parseInt(block.gasUsed, 16) : 0;
+              const txCount = Array.isArray(block.transactions) ? block.transactions.length : 0;
+              
+              metrics.push({
+                blockNumber: blockNumber,
+                timestamp: timestamp,
+                txCount: txCount,
+                gasUsed: gasUsed,
+                gasUsedFormatted: (gasUsed / 1000000).toFixed(2)
+              });
+            }
+          } catch (blockError) {
+            console.warn(`Failed to fetch block ${latestBlockNumber - i} for metrics:`, blockError);
+          }
+        }
+      }
+      
+      res.json({ 
+        metrics,
+        lastUpdated: new Date().toISOString(),
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error("Error fetching network activity:", error);
+      res.json({ 
+        metrics: [],
+        lastUpdated: new Date().toISOString(),
+        timestamp: Date.now()
+      });
     }
   });
 
