@@ -1,41 +1,8 @@
 import { TrendingUp, Activity, Zap, DollarSign } from "lucide-react";
 
 export const NetworkStats = () => {
-  // Mock data — swap with live network stats when wired
-  const stats = [
-    {
-      title: "ETH Price",
-      value: "$4,352.33",
-      change: "+1.94%",
-      icon: DollarSign,
-      color: "text-origin-cyan",
-      gradient: "bg-gradient-to-br from-origin-cyan/20 to-origin-cyan/5",
-    },
-    {
-      title: "Gas Price",
-      value: "28 Gwei",
-      change: "Standard",
-      icon: Zap,
-      color: "text-warning",
-      gradient: "bg-gradient-to-br from-warning/20 to-warning/5",
-    },
-    {
-      title: "Latest Block",
-      value: "20,629,847",
-      change: "8 secs ago",
-      icon: Activity,
-      color: "text-origin-purple",
-      gradient: "bg-gradient-to-br from-origin-purple/20 to-origin-purple/5",
-    },
-    {
-      title: "Daily Txns",
-      value: "1.2M",
-      change: "24h volume",
-      icon: TrendingUp,
-      color: "text-origin-teal",
-      gradient: "bg-gradient-to-br from-origin-teal/20 to-origin-teal/5",
-    },
-  ];
+  // This component is deprecated - use EthereumDashboard for live network stats
+  const stats: any[] = [];
 
   return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">

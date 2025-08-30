@@ -37,10 +37,10 @@ const Index = () => {
                 <h3 className="text-xl font-semibold mb-4 font-space">Transaction Volume</h3>
                 <div className="flex items-center justify-center h-64 text-muted-foreground">
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-full animate-pulse-slow flex items-center justify-center">
-                      <div className="w-8 h-8 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-full flex items-center justify-center opacity-50">
+                      <div className="w-8 h-8 text-primary-foreground">📊</div>
                     </div>
-                    <p className="font-space">Volume analytics loading...</p>
+                    <p className="font-space">Volume analytics requires additional API integration</p>
                   </div>
                 </div>
               </div>

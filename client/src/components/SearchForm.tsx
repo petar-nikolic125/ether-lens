@@ -9,8 +9,8 @@ interface SearchFormProps {
 }
 
 export const SearchForm = ({ onSearch }: SearchFormProps) => {
-  const [address, setAddress] = useState("0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad");
-  const [startBlock, setStartBlock] = useState("12000000");
+  const [address, setAddress] = useState("");
+  const [startBlock, setStartBlock] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {

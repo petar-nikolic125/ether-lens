@@ -9,8 +9,8 @@ import { Search, Coins, ArrowRightLeft, Clock, Hash } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const TokenTracker = () => {
-  const [searchAddress, setSearchAddress] = useState("0x742d35Cc6634C0532925a3b844Bc454e4438f44e");
-  const [searchStartBlock, setSearchStartBlock] = useState("18000000");
+  const [searchAddress, setSearchAddress] = useState("");
+  const [searchStartBlock, setSearchStartBlock] = useState("");
   const [activeSearch, setActiveSearch] = useState<{address: string, startBlock: string} | null>(null);
 
   const { data: tokenData, isLoading, error } = useQuery({

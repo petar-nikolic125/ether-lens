@@ -116,7 +116,7 @@ const APIDocs = () => {
           </CardHeader>
           <CardContent>
             <div className="bg-muted p-4 rounded-lg font-mono text-sm">
-              https://your-app.replit.app/api
+              {window.location.origin}/api
             </div>
           </CardContent>
         </Card>

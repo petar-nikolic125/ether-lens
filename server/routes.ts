@@ -492,8 +492,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         netBalance: (totalReceived - totalSent).toString(),
         currentBalance: currentBalance,
         currentBalanceEth: (BigInt(currentBalance) / BigInt("1000000000000000000")).toString(),
-        firstActivityBlock: processedTransactions.length > 0 ? Math.min(...processedTransactions.map(tx => tx.blockNumber)) : validStartBlock,
-        lastActivityBlock: processedTransactions.length > 0 ? Math.max(...processedTransactions.map(tx => tx.blockNumber)) : validStartBlock,
+        firstActivityBlock: processedTransactions.length > 0 ? Math.min(...processedTransactions.map((tx: any) => tx.blockNumber)) : validStartBlock,
+        lastActivityBlock: processedTransactions.length > 0 ? Math.max(...processedTransactions.map((tx: any) => tx.blockNumber)) : validStartBlock,
         tokenCount: Object.keys(tokenBalances).length,
         nftTransferCount: nftTransfers.length,
         internalTxCount: internalTxs.length,
@@ -675,7 +675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             timestamp: Date.now(),
             txCount: "N/A",
             miner: "Loading...",
-            gasUsed: "Loading...",
+            gasUsed: "N/A",
             timeAgo: "Live"
           }];
           res.json({ blocks: basicBlocks });
@@ -764,14 +764,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (blockData.result) {
           const latestBlock = parseInt(blockData.result, 16);
           console.log("Latest block number:", latestBlock);
-          // Force refresh to try getting real transactions
-          const basicTx = [{
-            hash: "Loading real data...",
-            from: "0x0000...",
-            to: "0x0000...", 
-            value: "0.000000",
-            timeAgo: "Loading..."
-          }];
+          // Return empty result instead of placeholder data
+          const basicTx: any[] = [];
           res.json({ transactions: basicTx });
           return;
         }
@@ -950,9 +944,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const chartData = Array.from({ length: validDays }, (_, i) => {
         const dayOffset = validDays - 1 - i;
         const timestamp = now - (dayOffset * 24 * 60 * 60 * 1000);
-        // Simulate small price variations around current price for demo
-        const variation = (Math.random() - 0.5) * 200; // ±$100 variation
-        const price = Math.max(100, currentPrice + variation);
+        // Use current price for all historical points (simplified approach with Etherscan data)
+        const price = currentPrice;
         return {
           timestamp,
           price,
