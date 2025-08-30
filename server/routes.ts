@@ -494,8 +494,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get ETH price history for charts
   app.get("/api/eth-price-history", async (req, res) => {
     try {
-      const days = req.query.days || '7';
-      const priceResponse = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=${days}&interval=${days <= 1 ? 'hourly' : 'daily'}`);
+      const daysParam = req.query.days || '7';
+      const days = parseInt(Array.isArray(daysParam) ? daysParam[0] : String(daysParam));
+      const validDays = isNaN(days) ? 7 : Math.max(1, Math.min(days, 365)); // Limit between 1-365 days
+      const priceResponse = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=${validDays}&interval=${validDays <= 1 ? 'hourly' : 'daily'}`);
       const priceData = await priceResponse.json();
       
       if (priceData.prices) {
@@ -508,10 +510,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({ 
           data: chartData,
           lastUpdated: new Date().toISOString(),
-          period: `${days} days`
+          period: `${validDays} days`
         });
       } else {
-        res.json({ data: [], lastUpdated: new Date().toISOString(), period: `${days} days` });
+        res.json({ data: [], lastUpdated: new Date().toISOString(), period: `${validDays} days` });
       }
     } catch (error) {
       console.error("Error fetching ETH price history:", error);
