@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Wallet, TrendingUp, TrendingDown, Activity, Calendar, Shuffle, Image, Hash, FileSearch } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useWalletContext } from "@/contexts/WalletContext";
 import { TransactionList } from "@/components/TransactionList";
 import { BalanceChart } from "@/components/BalanceChart";
 import { HistoricalBalance } from "@/components/HistoricalBalance";
@@ -17,10 +18,18 @@ import { EventLogs } from "@/components/EventLogs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const WalletAnalyzer = () => {
+  const { account } = useWalletContext();
   const [searchAddress, setSearchAddress] = useState("");
   const [searchStartBlock, setSearchStartBlock] = useState("");
   const [activeWallet, setActiveWallet] = useState<{address: string, startBlock: string} | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Auto-fill wallet address when connected
+  useEffect(() => {
+    if (account && !searchAddress) {
+      setSearchAddress(account);
+    }
+  }, [account, searchAddress]);
 
   // Fetch comprehensive wallet analysis data
   const { data: analysisData, isLoading: analysisLoading } = useQuery({
