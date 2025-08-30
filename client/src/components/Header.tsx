@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { Search, ChevronDown, Bell, User, Home, Activity, Database, Coins, FileText, HelpCircle, Settings } from "lucide-react";
+import React from "react";
+import { Search, Home, Activity, Database, Coins, FileText, HelpCircle } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export const Header: React.FC = () => {
@@ -7,63 +7,9 @@ export const Header: React.FC = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Update header with live data
-  useEffect(() => {
-    const updateHeaderData = async () => {
-      try {
-        const response = await fetch('/api/network-stats');
-        const data = await response.json();
-        
-        if (data.stats) {
-          const ethPriceElement = document.getElementById('eth-price');
-          const gasPriceElement = document.getElementById('gas-price');
-          
-          const ethPriceStat = data.stats.find((stat: any) => stat.title === 'ETHER PRICE');
-          const gasPriceStat = data.stats.find((stat: any) => stat.title === 'GAS PRICE');
-          
-          if (ethPriceElement && ethPriceStat) {
-            ethPriceElement.textContent = ethPriceStat.value;
-          }
-          
-          if (gasPriceElement && gasPriceStat) {
-            gasPriceElement.textContent = gasPriceStat.value;
-          }
-        }
-      } catch (error) {
-        console.error('Failed to update header data:', error);
-      }
-    };
-
-    updateHeaderData();
-    const interval = setInterval(updateHeaderData, 120000); // Update every 2 minutes
-    
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <header className="bg-background border-b border-border/20">
-      {/* Top bar with ETH price */}
-      <div className="bg-secondary/30 border-b border-border/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2 text-sm">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground font-inter">ETH Price:</span>
-                <span className="text-success font-semibold" id="eth-price">Loading...</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground font-inter">Gas:</span>
-                <span className="text-foreground" id="gas-price">Loading...</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Bell className="w-4 h-4 text-muted-foreground" />
-              <User className="w-4 h-4 text-muted-foreground" />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main navigation */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-4">
