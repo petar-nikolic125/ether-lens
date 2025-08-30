@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let i = 0; i < 6; i++) {
         try {
           const blockNumber = latestBlockNumber - i;
-          const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+          const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
           const blockResponse = await fetch(blockUrl);
           const blockData = await blockResponse.json();
           
@@ -485,12 +485,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const blocksResponse = { blocks };
       setCachedData(cacheKey, blocksResponse);
       res.json(blocksResponse);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching latest blocks:", error);
       console.error("Error details:", error.message);
       // Still try to get at least basic block data
       try {
-        const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
         const blockResponse = await fetch(blockUrl);
         const blockData = await blockResponse.json();
         if (blockData.result) {
@@ -541,7 +541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let blockOffset = 0; blockOffset < 5 && transactions.length < 6; blockOffset++) {
         try {
           const blockNumber = latestBlockNumber - blockOffset;
-          const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+          const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
           const blockResponse = await fetch(blockUrl);
           const blockData = await blockResponse.json();
           
@@ -578,12 +578,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transactionsResponse = { transactions };
       setCachedData(cacheKey, transactionsResponse);
       res.json(transactionsResponse);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching latest transactions:", error);
       console.error("Full error details:", error.message, error.stack);
       // Still try to get at least latest block number
       try {
-        const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
         const blockResponse = await fetch(blockUrl);
         const blockData = await blockResponse.json();
         if (blockData.result) {
@@ -667,7 +667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Fetch ETH price from Etherscan to match their data exactly
       try {
-        const ethPriceUrl = `${etherscanService.baseUrl}?module=stats&action=ethprice&apikey=${etherscanService.apiKey}`;
+        const ethPriceUrl = `${etherscanService.baseUrl}?chainid=1&module=stats&action=ethprice&apikey=${etherscanService.apiKey}`;
         const priceResponse = await fetch(ethPriceUrl);
         const priceData = await priceResponse.json();
         
@@ -684,7 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch latest block
       try {
-        const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
         const blockResponse = await fetch(blockUrl);
         const blockData = await blockResponse.json();
         if (blockData.result && typeof blockData.result === 'string') {
@@ -699,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch gas price
       try {
-        const gasUrl = `${etherscanService.baseUrl}?module=gastracker&action=gasoracle&apikey=${etherscanService.apiKey}`;
+        const gasUrl = `${etherscanService.baseUrl}?chainid=1&module=gastracker&action=gasoracle&apikey=${etherscanService.apiKey}`;
         const gasResponse = await fetch(gasUrl);
         const gasData = await gasResponse.json();
         if (gasData.result) {
@@ -811,7 +811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (let i = 9; i >= 0; i--) {
           try {
             const blockNumber = latestBlockNumber - i;
-            const blockUrl = `${etherscanService.baseUrl}?module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+            const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
             const blockResponse = await fetch(blockUrl);
             const blockData = await blockResponse.json();
             
