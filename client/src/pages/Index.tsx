@@ -9,6 +9,7 @@ import { Header } from "@/components/Header";
 import { EthereumDashboard } from "@/components/EthereumDashboard";
 import { HistoricalBalance } from "@/components/HistoricalBalance";
 import { TokenTransfers } from "@/components/TokenTransfers";
+import { TransactionVolumeChart } from "@/components/TransactionVolumeChart";
 
 const Index = () => {
   const [searchData, setSearchData] = useState<{ address: string; startBlock: string } | null>(null);
@@ -33,17 +34,7 @@ const Index = () => {
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
               <BalanceChart address={searchData.address} />
-              <div className="ot-card">
-                <h3 className="text-xl font-semibold mb-4 font-space">Transaction Volume</h3>
-                <div className="flex items-center justify-center h-64 text-muted-foreground">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-full flex items-center justify-center opacity-50">
-                      <div className="w-8 h-8 text-primary-foreground">📊</div>
-                    </div>
-                    <p className="font-space">Volume analytics requires additional API integration</p>
-                  </div>
-                </div>
-              </div>
+              <TransactionVolumeChart address={searchData.address} startBlock={searchData.startBlock} />
             </div>
 
             {/* Transaction List */}

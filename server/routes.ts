@@ -376,6 +376,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get balance evolution over time
+  app.get("/api/wallet/:address/balance-evolution", async (req, res) => {
+    try {
+      const { address } = req.params;
+      const { days = "30" } = req.query;
+      
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+        return res.status(400).json({ error: "Invalid Ethereum address" });
+      }
+
+      const daysCount = Math.min(parseInt(days as string) || 30, 90); // Limit to 90 days
+      const balanceData = [];
+      const currentTime = Date.now();
+      
+      // Get current balance first
+      const currentBalance = await etherscanService.getBalance(address);
+      
+      // Sample points over the time period
+      for (let i = 0; i < daysCount; i += Math.max(1, Math.floor(daysCount / 20))) {
+        try {
+          const daysAgo = daysCount - i;
+          const targetDate = new Date(currentTime - (daysAgo * 24 * 60 * 60 * 1000));
+          const timestamp = Math.floor(targetDate.getTime() / 1000);
+          
+          // Get block number for that timestamp
+          const blockNumber = await etherscanService.getBlockByTimestamp(timestamp);
+          
+          // Get balance at that block
+          const balance = await etherscanService.getBalance(address, blockNumber);
+          
+          balanceData.push({
+            date: targetDate.toISOString().split('T')[0],
+            timestamp: timestamp,
+            blockNumber: blockNumber,
+            balance: balance,
+            balanceEth: (BigInt(balance) / BigInt("1000000000000000000")).toString()
+          });
+          
+          // Add small delay to respect rate limits
+          await new Promise(resolve => setTimeout(resolve, 200));
+        } catch (error) {
+          console.warn(`Failed to fetch balance for ${daysCount - i} days ago:`, error);
+        }
+      }
+      
+      // Add current balance as the latest point
+      balanceData.push({
+        date: new Date().toISOString().split('T')[0],
+        timestamp: Math.floor(Date.now() / 1000),
+        blockNumber: await etherscanService.getLatestBlockNumber(),
+        balance: currentBalance,
+        balanceEth: (BigInt(currentBalance) / BigInt("1000000000000000000")).toString()
+      });
+      
+      // Sort by timestamp
+      balanceData.sort((a, b) => a.timestamp - b.timestamp);
+      
+      // Calculate stats
+      const balances = balanceData.map(b => parseFloat(b.balanceEth));
+      const maxBalance = Math.max(...balances);
+      const minBalance = Math.min(...balances);
+      const currentBalanceEth = parseFloat((BigInt(currentBalance) / BigInt("1000000000000000000")).toString());
+      
+      res.json({
+        address,
+        days: daysCount,
+        balanceData,
+        stats: {
+          maxBalance: maxBalance.toString(),
+          minBalance: minBalance.toString(), 
+          currentBalance: currentBalanceEth.toString(),
+          dataPoints: balanceData.length
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching balance evolution:", error);
+      res.status(500).json({ error: "Failed to fetch balance evolution" });
+    }
+  });
+
   // Get comprehensive wallet analysis
   app.get("/api/wallet/:address/analyze", async (req, res) => {
     try {

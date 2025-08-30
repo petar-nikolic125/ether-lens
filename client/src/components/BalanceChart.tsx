@@ -1,4 +1,6 @@
 import { Wallet } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface BalanceChartProps {
   address: string;
@@ -6,17 +8,68 @@ interface BalanceChartProps {
 
 interface BalancePoint {
   date: string;
-  balance: number;
+  balance: string;
+  balanceEth: string;
   timestamp: number;
 }
 
-export const BalanceChart = ({ address }: BalanceChartProps) => {
-  // Show message that balance history requires API integration
-  const balanceData: BalancePoint[] = [];
+interface BalanceEvolutionResponse {
+  address: string;
+  days: number;
+  balanceData: BalancePoint[];
+  stats: {
+    maxBalance: string;
+    minBalance: string;
+    currentBalance: string;
+    dataPoints: number;
+  };
+}
 
-  const maxBalance = 0;
-  const minBalance = 0;
-  const currentBalance = 0;
+export const BalanceChart = ({ address }: BalanceChartProps) => {
+  const { data, isLoading, error } = useQuery<BalanceEvolutionResponse>({
+    queryKey: ['balance-evolution', address],
+    queryFn: async () => {
+      const response = await fetch(`/api/wallet/${address}/balance-evolution?days=30`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch balance evolution');
+      }
+      return response.json();
+    },
+    enabled: !!address,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="ot-card-glass rounded-2xl p-6 hover-lift ot-border-gradient transition-neural">
+        <div className="flex items-center justify-center h-80">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="ot-card-glass rounded-2xl p-6 hover-lift ot-border-gradient transition-neural">
+        <div className="flex items-center justify-center h-80 text-center">
+          <div className="text-muted-foreground">
+            <Wallet className="w-16 h-16 mx-auto mb-4 opacity-50" />
+            <p>Failed to load balance evolution data</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const balanceData = data?.balanceData || [];
+  const stats = data?.stats || { maxBalance: "0", minBalance: "0", currentBalance: "0" };
+
+  // Format data for the chart
+  const chartData = balanceData.map(point => ({
+    date: point.date,
+    balance: parseFloat(point.balanceEth),
+    timestamp: point.timestamp
+  }));
 
   return (
       <div
@@ -38,34 +91,73 @@ export const BalanceChart = ({ address }: BalanceChartProps) => {
           </div>
         </div>
 
-        <div className="h-80 mb-6 flex items-center justify-center text-center">
-          <div className="text-muted-foreground">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-full flex items-center justify-center opacity-50">
-              <Wallet className="w-8 h-8 text-primary-foreground" />
+        <div className="h-80 mb-6">
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="rgba(255,255,255,0.6)"
+                  fontSize={12}
+                  tickFormatter={(value) => {
+                    const date = new Date(value);
+                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                  }}
+                />
+                <YAxis 
+                  stroke="rgba(255,255,255,0.6)"
+                  fontSize={12}
+                  tickFormatter={(value) => `${value.toFixed(4)} ETH`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    color: 'white'
+                  }}
+                  formatter={(value: number) => [`${value.toFixed(6)} ETH`, 'Balance']}
+                  labelFormatter={(label) => `Date: ${label}`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="balance" 
+                  stroke="#6366f1" 
+                  strokeWidth={2}
+                  dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#6366f1' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full text-center">
+              <div className="text-muted-foreground">
+                <Wallet className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p>No balance data available</p>
+              </div>
             </div>
-            <p className="font-space">Historical balance data requires API integration</p>
-            <p className="text-sm mt-2">This feature will show balance evolution over time</p>
-          </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
           <div className="glass rounded-xl p-4 transition-glass">
-            <div className="text-2xl font-bold text-muted-foreground font-space mb-1">
-              --
+            <div className="text-2xl font-bold text-primary font-space mb-1">
+              {parseFloat(stats.maxBalance).toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground font-space">Peak Balance</div>
           </div>
 
           <div className="glass rounded-xl p-4 transition-glass">
-            <div className="text-2xl font-bold text-muted-foreground font-space mb-1">
-              --
+            <div className="text-2xl font-bold text-primary font-space mb-1">
+              {parseFloat(stats.minBalance).toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground font-space">Lowest Balance</div>
           </div>
 
           <div className="glass rounded-xl p-4 transition-glass">
-            <div className="text-2xl font-bold text-muted-foreground font-space mb-1">
-              --
+            <div className="text-2xl font-bold text-primary font-space mb-1">
+              {parseFloat(stats.currentBalance).toFixed(4)}
             </div>
             <div className="text-xs text-muted-foreground font-space">Current Balance</div>
           </div>
