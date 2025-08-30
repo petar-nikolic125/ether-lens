@@ -28,14 +28,19 @@ export const TokenTransfers = ({ address, startBlock }: TokenTransfersProps) => 
   const itemsPerPage = 10;
 
   // Fetch token transfers from API
-  const { data: tokenData, isLoading } = useQuery({
+  const { data: tokenData, isLoading, error } = useQuery({
     queryKey: ['tokens', address, startBlock],
     queryFn: async () => {
       const response = await fetch(`/api/wallet/${address}/tokens?startBlock=${startBlock}`);
-      if (!response.ok) throw new Error('Failed to fetch token transfers');
+      if (!response.ok) {
+        // Handle API errors gracefully
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch token transfers' }));
+        throw new Error(errorData.error || 'Failed to fetch token transfers');
+      }
       return response.json();
     },
     enabled: !!address && !!startBlock,
+    retry: 1, // Only retry once for token transfers
   });
 
   const tokenTransfers: TokenTransfer[] = tokenData?.tokenTransfers || [];
@@ -79,6 +84,30 @@ export const TokenTransfers = ({ address, startBlock }: TokenTransfersProps) => 
     );
   }
 
+  if (error) {
+    return (
+      <Card className="ot-card-glass ot-border-gradient">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3 font-space">
+            <Coins className="w-5 h-5 text-origin-cyan" />
+            Token Transfers
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-destructive/20 rounded-full flex items-center justify-center">
+              <Coins className="w-6 h-6 text-destructive" />
+            </div>
+            <p className="text-destructive font-space">Failed to load token transfers</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">
+              {error instanceof Error ? error.message : "Unable to fetch token transfer data"}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!tokenTransfers.length) {
     return (
       <Card className="ot-card-glass ot-border-gradient">
@@ -89,8 +118,14 @@ export const TokenTransfers = ({ address, startBlock }: TokenTransfersProps) => 
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground py-8">
-            No token transfers found for this address.
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-muted/20 rounded-full flex items-center justify-center">
+              <Coins className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground font-space">No token transfers found</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">
+              {tokenData?.message || `This address may not have any ERC-20 token activity since block ${startBlock}`}
+            </p>
           </div>
         </CardContent>
       </Card>

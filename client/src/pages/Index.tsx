@@ -11,10 +11,7 @@ import { HistoricalBalance } from "@/components/HistoricalBalance";
 import { TokenTransfers } from "@/components/TokenTransfers";
 
 const Index = () => {
-  const [searchData, setSearchData] = useState<{ address: string; startBlock: string } | null>({
-    address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-    startBlock: "18000000"
-  });
+  const [searchData, setSearchData] = useState<{ address: string; startBlock: string } | null>(null);
 
   return (
     <div className="min-h-screen bg-background font-inter">
