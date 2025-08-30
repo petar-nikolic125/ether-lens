@@ -29,7 +29,7 @@ interface Transaction {
 export const EthereumDashboard: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('7');
 
-  // Fetch network stats with auto-refresh every 30 seconds  
+  // Fetch network stats with auto-refresh every 60 seconds  
   const { data: statsData } = useQuery({
     queryKey: ['network-stats'],
     queryFn: async () => {
@@ -37,7 +37,7 @@ export const EthereumDashboard: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch network stats');
       return response.json();
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds
   });
 
   // Fetch ETH price history for charts
@@ -48,7 +48,7 @@ export const EthereumDashboard: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch price history');
       return response.json();
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 120000, // Refresh every 2 minutes
   });
 
   // Fetch network activity metrics
@@ -59,10 +59,10 @@ export const EthereumDashboard: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch network activity');
       return response.json();
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 90000, // Refresh every 90 seconds
   });
 
-  // Fetch latest blocks with auto-refresh every 15 seconds
+  // Fetch latest blocks with auto-refresh every 90 seconds
   const { data: blocksData } = useQuery({
     queryKey: ['latest-blocks'],
     queryFn: async () => {
@@ -70,10 +70,10 @@ export const EthereumDashboard: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch latest blocks');
       return response.json();
     },
-    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchInterval: 90000, // Refresh every 90 seconds
   });
 
-  // Fetch latest transactions with auto-refresh every 15 seconds
+  // Fetch latest transactions with auto-refresh every 90 seconds
   const { data: transactionsData } = useQuery({
     queryKey: ['latest-transactions'],
     queryFn: async () => {
@@ -81,7 +81,7 @@ export const EthereumDashboard: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch latest transactions');
       return response.json();
     },
-    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchInterval: 90000, // Refresh every 90 seconds
   });
 
   const stats = statsData?.stats || [

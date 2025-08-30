@@ -7,7 +7,7 @@ import { Clock, ArrowRightLeft, Hash, Coins } from "lucide-react";
 const LatestTransactions = () => {
   const { data: transactionsData, isLoading } = useQuery({
     queryKey: ["/api/latest-transactions"],
-    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds
   });
 
   return (

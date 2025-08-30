@@ -35,7 +35,7 @@ export const Header: React.FC = () => {
     };
 
     updateHeaderData();
-    const interval = setInterval(updateHeaderData, 30000); // Update every 30 seconds
+    const interval = setInterval(updateHeaderData, 120000); // Update every 2 minutes
     
     return () => clearInterval(interval);
   }, []);

@@ -258,9 +258,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get latest blocks
   app.get("/api/latest-blocks", async (req, res) => {
     try {
+      const cacheKey = 'latest-blocks';
+      const cachedData = getCachedData(cacheKey);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
       const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
-      const response = await fetch(url);
-      const data = await response.json();
+      const blockResponse = await fetch(url);
+      const data = await blockResponse.json();
       
       if (!data.result) {
         return res.json({ blocks: [] });
@@ -312,19 +317,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      res.json({ blocks });
+      const blocksResponse = { blocks };
+      setCachedData(cacheKey, blocksResponse);
+      res.json(blocksResponse);
     } catch (error) {
       console.error("Error fetching latest blocks:", error);
-      res.json({ blocks: [] }); // Return empty array instead of error
+      const blocksErrorResponse = { blocks: [] };
+      res.json(blocksErrorResponse); // Return empty array instead of error
     }
   });
 
   // Get latest transactions
   app.get("/api/latest-transactions", async (req, res) => {
     try {
+      const cacheKey = 'latest-transactions';
+      const cachedData = getCachedData(cacheKey);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
       const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
-      const response = await fetch(url);
-      const data = await response.json();
+      const txResponse = await fetch(url);
+      const data = await txResponse.json();
       
       if (!data.result) {
         return res.json({ transactions: [] });
@@ -375,16 +388,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      res.json({ transactions });
+      const transactionsResponse = { transactions };
+      setCachedData(cacheKey, transactionsResponse);
+      res.json(transactionsResponse);
     } catch (error) {
       console.error("Error fetching latest transactions:", error);
-      res.json({ transactions: [] }); // Return empty array instead of error
+      const txErrorResponse = { transactions: [] };
+      res.json(txErrorResponse); // Return empty array instead of error
     }
   });
+
+  // Simple in-memory cache with TTL
+  const cache = new Map();
+  const CACHE_TTL = 30000; // 30 seconds
+
+  const getCachedData = (key: string) => {
+    const cached = cache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data;
+    }
+    return null;
+  };
+
+  const setCachedData = (key: string, data: any) => {
+    cache.set(key, { data, timestamp: Date.now() });
+  };
 
   // Get network stats
   app.get("/api/network-stats", async (req, res) => {
     try {
+      const cacheKey = 'network-stats';
+      const cachedStats = getCachedData(cacheKey);
+      if (cachedStats) {
+        return res.json(cachedStats);
+      }
+
       // Default stats structure
       const stats = [
         {
@@ -417,17 +455,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       ];
 
-      // Fetch ETH price
+      // Fetch ETH price from Etherscan to match their data exactly
       try {
-        const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+        const ethPriceUrl = `${etherscanService.baseUrl}?module=stats&action=ethprice&apikey=${etherscanService.apiKey}`;
+        const priceResponse = await fetch(ethPriceUrl);
         const priceData = await priceResponse.json();
-        const ethPrice = priceData.ethereum?.usd;
-        if (ethPrice && !isNaN(ethPrice)) {
-          stats[0].value = `$${ethPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-          stats[0].change = "Live data";
+        
+        if (priceData.status === "1" && priceData.result?.ethusd) {
+          const ethPrice = parseFloat(priceData.result.ethusd);
+          if (!isNaN(ethPrice)) {
+            stats[0].value = `$${ethPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            stats[0].change = "Live data";
+          }
         }
       } catch (priceError) {
-        console.warn("Failed to fetch ETH price:", priceError);
+        console.warn("Failed to fetch ETH price from Etherscan:", priceError);
       }
       
       // Fetch latest block
@@ -471,6 +513,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: Date.now()
       };
       
+      // Cache the response
+      setCachedData(cacheKey, response);
+      
       res.json(response);
     } catch (error) {
       console.error("Error fetching network stats:", error);
@@ -498,6 +543,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const daysString = Array.isArray(daysParam) ? daysParam[0] : daysParam;
       const days = parseInt(typeof daysString === 'string' ? daysString : '7');
       const validDays = isNaN(days) ? 7 : Math.max(1, Math.min(days, 365)); // Limit between 1-365 days
+      
+      const cacheKey = `eth-price-history-${validDays}`;
+      const cachedData = getCachedData(cacheKey);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+
       const priceResponse = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/market_chart?vs_currency=usd&days=${validDays}&interval=${validDays <= 1 ? 'hourly' : 'daily'}`);
       const priceData = await priceResponse.json();
       
@@ -508,17 +560,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           date: new Date(price[0]).toISOString()
         }));
         
-        res.json({ 
+        const response = { 
           data: chartData,
           lastUpdated: new Date().toISOString(),
           period: `${validDays} days`
-        });
+        };
+        setCachedData(cacheKey, response);
+        res.json(response);
       } else {
-        res.json({ data: [], lastUpdated: new Date().toISOString(), period: `${validDays} days` });
+        const response = { data: [], lastUpdated: new Date().toISOString(), period: `${validDays} days` };
+        setCachedData(cacheKey, response);
+        res.json(response);
       }
     } catch (error) {
       console.error("Error fetching ETH price history:", error);
-      res.json({ data: [], lastUpdated: new Date().toISOString(), period: "N/A" });
+      const errorResponse = { data: [], lastUpdated: new Date().toISOString(), period: "N/A" };
+      res.json(errorResponse);
     }
   });
 

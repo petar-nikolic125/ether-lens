@@ -7,7 +7,7 @@ import { Clock, Hash, User, Gauge } from "lucide-react";
 const LatestBlocks = () => {
   const { data: blocksData, isLoading } = useQuery({
     queryKey: ["/api/latest-blocks"],
-    refetchInterval: 15000, // Refresh every 15 seconds
+    refetchInterval: 60000, // Refresh every 60 seconds
   });
 
   return (
