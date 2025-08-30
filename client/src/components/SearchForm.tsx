@@ -10,6 +10,9 @@ interface SearchFormProps {
 
 // Famous wallet addresses for testing and demo purposes
 const FAMOUS_WALLETS = [
+  { name: "OriginTrail (TRAC) Token", address: "0xaa7a9ca87d3694b5755f213b5d04094b8d0f0a6f", startBlock: "4718084" },
+  { name: "OriginTrail Foundation Treasury", address: "0x67df244584b67e8c51b10ad610aaffa9a402fdb6", startBlock: "7500000" },
+  { name: "OriginTrail Treasury: Locked", address: "0x237343c10705ae7605850977503e25a8c12851e6", startBlock: "8000000" },
   { name: "Ethereum Foundation", address: "0xde0B295669a9FD93d5F28D9Ec85E40f4cb697BAe", startBlock: "46147" },
   { name: "Binance Hot Wallet", address: "0x28C6c06298d514Db089934071355E5743bf21d60", startBlock: "4634748" },
   { name: "Coinbase 14", address: "0x71660c4005BA85c37ccec55d0C4493E66Fe775d3", startBlock: "3327231" },
