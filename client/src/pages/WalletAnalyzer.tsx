@@ -5,16 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Wallet, TrendingUp, TrendingDown, Activity, Calendar } from "lucide-react";
+import { Search, Wallet, TrendingUp, TrendingDown, Activity, Calendar, Shuffle, Image, Hash, FileSearch } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { TransactionList } from "@/components/TransactionList";
 import { BalanceChart } from "@/components/BalanceChart";
 import { HistoricalBalance } from "@/components/HistoricalBalance";
+import { InternalTransactions } from "@/components/InternalTransactions";
+import { NFTTransfers } from "@/components/NFTTransfers";
+import { TransactionStatus } from "@/components/TransactionStatus";
+import { EventLogs } from "@/components/EventLogs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const WalletAnalyzer = () => {
   const [searchAddress, setSearchAddress] = useState("");
   const [searchStartBlock, setSearchStartBlock] = useState("");
   const [activeWallet, setActiveWallet] = useState<{address: string, startBlock: string} | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const { data: walletData, isLoading, error } = useQuery({
     queryKey: ['wallet-transactions', activeWallet?.address, activeWallet?.startBlock],
@@ -173,14 +179,66 @@ const WalletAnalyzer = () => {
               </div>
             )}
 
-            {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              <BalanceChart address={activeWallet.address} />
-              <HistoricalBalance address={activeWallet.address} />
-            </div>
+            {/* Comprehensive Analysis Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-6 mb-8">
+                <TabsTrigger value="overview" className="flex items-center gap-2" data-testid="tab-overview">
+                  <Activity className="w-4 h-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="transactions" className="flex items-center gap-2" data-testid="tab-transactions">
+                  <Wallet className="w-4 h-4" />
+                  Transactions
+                </TabsTrigger>
+                <TabsTrigger value="internal" className="flex items-center gap-2" data-testid="tab-internal">
+                  <Shuffle className="w-4 h-4" />
+                  Internal
+                </TabsTrigger>
+                <TabsTrigger value="nfts" className="flex items-center gap-2" data-testid="tab-nfts">
+                  <Image className="w-4 h-4" />
+                  NFTs
+                </TabsTrigger>
+                <TabsTrigger value="events" className="flex items-center gap-2" data-testid="tab-events">
+                  <Hash className="w-4 h-4" />
+                  Events
+                </TabsTrigger>
+                <TabsTrigger value="status" className="flex items-center gap-2" data-testid="tab-status">
+                  <FileSearch className="w-4 h-4" />
+                  Status
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Transaction List */}
-            <TransactionList address={activeWallet.address} startBlock={activeWallet.startBlock} />
+              <TabsContent value="overview" className="space-y-8">
+                {/* Charts Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <BalanceChart address={activeWallet.address} />
+                  <HistoricalBalance address={activeWallet.address} />
+                </div>
+
+                {/* Quick Transaction Overview */}
+                <TransactionList address={activeWallet.address} startBlock={activeWallet.startBlock} />
+              </TabsContent>
+
+              <TabsContent value="transactions" className="space-y-6">
+                <TransactionList address={activeWallet.address} startBlock={activeWallet.startBlock} />
+              </TabsContent>
+
+              <TabsContent value="internal" className="space-y-6">
+                <InternalTransactions address={activeWallet.address} startBlock={activeWallet.startBlock} />
+              </TabsContent>
+
+              <TabsContent value="nfts" className="space-y-6">
+                <NFTTransfers address={activeWallet.address} startBlock={activeWallet.startBlock} />
+              </TabsContent>
+
+              <TabsContent value="events" className="space-y-6">
+                <EventLogs address={activeWallet.address} startBlock={activeWallet.startBlock} />
+              </TabsContent>
+
+              <TabsContent value="status" className="space-y-6">
+                <TransactionStatus />
+              </TabsContent>
+            </Tabs>
           </div>
         )}
 

@@ -5,16 +5,42 @@ import { z } from "zod";
 
 // Etherscan API service
 class EtherscanService {
-  public baseUrl = "https://api.etherscan.io/api";
+  public baseUrl = "https://api.etherscan.io/v2/api";
   public apiKey = process.env.ETHERSCAN_API_KEY;
+  private chainId = "1"; // Ethereum mainnet
+
+  // Rate limiting helper
+  private async delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private async makeRequest(url: string, retries = 3): Promise<any> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        // Handle rate limit
+        if (data.status === "0" && data.message?.includes("rate limit")) {
+          console.warn("Rate limit hit, waiting 1 second...");
+          await this.delay(1000);
+          continue;
+        }
+        
+        return data;
+      } catch (error) {
+        if (i === retries - 1) throw error;
+        await this.delay(500);
+      }
+    }
+  }
 
   async getTransactions(address: string, startBlock: number = 0, endBlock: number = 99999999) {
-    const url = `${this.baseUrl}?module=account&action=txlist&address=${address}&startblock=${startBlock}&endblock=${endBlock}&page=1&offset=1000&sort=desc&apikey=${this.apiKey}`;
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=account&action=txlist&address=${address}&startblock=${startBlock}&endblock=${endBlock}&page=1&offset=1000&sort=desc&apikey=${this.apiKey}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
+    const data = await this.makeRequest(url);
     
-    console.log("Etherscan transactions API response:", data);
+    console.log("Etherscan V2 transactions API response:", data);
     
     // Handle "No transactions found" case - this is normal and not an error
     if (data.status === "0" && data.message === "No transactions found") {
@@ -30,12 +56,11 @@ class EtherscanService {
   }
 
   async getTokenTransfers(address: string, startBlock: number = 0) {
-    const url = `${this.baseUrl}?module=account&action=tokentx&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=1000&sort=desc&apikey=${this.apiKey}`;
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=account&action=tokentx&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=1000&sort=desc&apikey=${this.apiKey}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
+    const data = await this.makeRequest(url);
     
-    console.log("Etherscan token transfers API response:", data);
+    console.log("Etherscan V2 token transfers API response:", data);
     
     // Handle "No transactions found" case - this is normal and not an error
     if (data.status === "0" && data.message === "No transactions found") {
@@ -52,12 +77,11 @@ class EtherscanService {
 
   async getBalance(address: string, blockNumber?: number) {
     const tag = blockNumber ? blockNumber.toString() : "latest";
-    const url = `${this.baseUrl}?module=account&action=balance&address=${address}&tag=${tag}&apikey=${this.apiKey}`;
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=account&action=balance&address=${address}&tag=${tag}&apikey=${this.apiKey}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
+    const data = await this.makeRequest(url);
     
-    console.log("Etherscan balance API response:", data);
+    console.log("Etherscan V2 balance API response:", data);
     
     if (data.status !== "1") {
       console.error("Etherscan balance API error:", data);
@@ -68,16 +92,124 @@ class EtherscanService {
   }
 
   async getBlockByTimestamp(timestamp: number, closest: "before" | "after" = "before") {
-    const url = `${this.baseUrl}?module=block&action=getblocknobytime&timestamp=${timestamp}&closest=${closest}&apikey=${this.apiKey}`;
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=block&action=getblocknobytime&timestamp=${timestamp}&closest=${closest}&apikey=${this.apiKey}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
+    const data = await this.makeRequest(url);
     
     if (data.status !== "1") {
       throw new Error(data.message || "Failed to fetch block");
     }
     
     return parseInt(data.result);
+  }
+
+  // New V2 endpoints
+  async getInternalTransactions(address: string, startBlock: number = 0, endBlock: number = 99999999) {
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=account&action=txlistinternal&address=${address}&startblock=${startBlock}&endblock=${endBlock}&page=1&offset=100&sort=desc&apikey=${this.apiKey}`;
+    
+    const data = await this.makeRequest(url);
+    
+    if (data.status === "0" && data.message === "No transactions found") {
+      return [];
+    }
+    
+    if (data.status !== "1") {
+      throw new Error(data.message || "Failed to fetch internal transactions");
+    }
+    
+    return data.result || [];
+  }
+
+  async getNFTTransfers(address: string, startBlock: number = 0) {
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=account&action=tokennfttx&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=100&sort=desc&apikey=${this.apiKey}`;
+    
+    const data = await this.makeRequest(url);
+    
+    if (data.status === "0" && data.message === "No transactions found") {
+      return [];
+    }
+    
+    if (data.status !== "1") {
+      throw new Error(data.message || "Failed to fetch NFT transfers");
+    }
+    
+    return data.result || [];
+  }
+
+  async getERC1155Transfers(address: string, startBlock: number = 0) {
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=account&action=token1155tx&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=100&sort=desc&apikey=${this.apiKey}`;
+    
+    const data = await this.makeRequest(url);
+    
+    if (data.status === "0" && data.message === "No transactions found") {
+      return [];
+    }
+    
+    if (data.status !== "1") {
+      throw new Error(data.message || "Failed to fetch ERC1155 transfers");
+    }
+    
+    return data.result || [];
+  }
+
+  async getTransactionStatus(txHash: string) {
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=transaction&action=getstatus&txhash=${txHash}&apikey=${this.apiKey}`;
+    
+    const data = await this.makeRequest(url);
+    
+    if (data.status !== "1") {
+      throw new Error(data.message || "Failed to fetch transaction status");
+    }
+    
+    return data.result;
+  }
+
+  async getTransactionReceipt(txHash: string) {
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=proxy&action=eth_getTransactionReceipt&txhash=${txHash}&apikey=${this.apiKey}`;
+    
+    const data = await this.makeRequest(url);
+    
+    return data.result;
+  }
+
+  async getBlockReward(blockNumber: number) {
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=block&action=getblockreward&blockno=${blockNumber}&apikey=${this.apiKey}`;
+    
+    const data = await this.makeRequest(url);
+    
+    if (data.status !== "1") {
+      throw new Error(data.message || "Failed to fetch block reward");
+    }
+    
+    return data.result;
+  }
+
+  async getLatestBlockNumber() {
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=proxy&action=eth_blockNumber&apikey=${this.apiKey}`;
+    
+    const data = await this.makeRequest(url);
+    
+    if (!data.result) {
+      throw new Error("Failed to fetch latest block number");
+    }
+    
+    return parseInt(data.result, 16);
+  }
+
+  async getEventLogs(address: string, fromBlock: number, toBlock: number) {
+    const url = `${this.baseUrl}?chainid=${this.chainId}&module=logs&action=getLogs&address=${address}&fromBlock=${fromBlock}&toBlock=${toBlock}&page=1&offset=1000&apikey=${this.apiKey}`;
+    
+    const data = await this.makeRequest(url);
+    
+    if (data.status === "0" && data.message === "No logs found") {
+      return [];
+    }
+    
+    if (data.status !== "1") {
+      throw new Error(data.message || "Failed to fetch event logs");
+    }
+    
+    return data.result || [];
   }
 }
 
@@ -715,6 +847,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastUpdated: new Date().toISOString(),
         timestamp: Date.now()
       });
+    }
+  });
+
+  // New V2 API endpoints
+  
+  // Get internal transactions
+  app.get("/api/wallet/:address/internal-transactions", async (req, res) => {
+    try {
+      const { address } = req.params;
+      const { startBlock = "0" } = req.query;
+      
+      const validation = searchSchema.safeParse({ address, startBlock });
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.issues[0].message });
+      }
+
+      const { address: validAddress, startBlock: validStartBlock } = validation.data;
+      const internalTransactions = await etherscanService.getInternalTransactions(validAddress, validStartBlock);
+      
+      res.json({
+        internalTransactions,
+        address: validAddress,
+        startBlock: validStartBlock,
+      });
+
+    } catch (error) {
+      console.error("Error fetching internal transactions:", error);
+      res.status(500).json({ error: "Failed to fetch internal transactions" });
+    }
+  });
+
+  // Get NFT transfers (ERC-721)
+  app.get("/api/wallet/:address/nft-transfers", async (req, res) => {
+    try {
+      const { address } = req.params;
+      const { startBlock = "0" } = req.query;
+      
+      const validation = searchSchema.safeParse({ address, startBlock });
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.issues[0].message });
+      }
+
+      const { address: validAddress, startBlock: validStartBlock } = validation.data;
+      const nftTransfers = await etherscanService.getNFTTransfers(validAddress, validStartBlock);
+      
+      res.json({
+        nftTransfers,
+        address: validAddress,
+        startBlock: validStartBlock,
+      });
+
+    } catch (error) {
+      console.error("Error fetching NFT transfers:", error);
+      res.status(500).json({ error: "Failed to fetch NFT transfers" });
+    }
+  });
+
+  // Get transaction status
+  app.get("/api/transaction/:hash/status", async (req, res) => {
+    try {
+      const { hash } = req.params;
+      
+      if (!/^0x[a-fA-F0-9]{64}$/.test(hash)) {
+        return res.status(400).json({ error: "Invalid transaction hash" });
+      }
+
+      const status = await etherscanService.getTransactionStatus(hash);
+      const receipt = await etherscanService.getTransactionReceipt(hash);
+      
+      res.json({
+        hash,
+        status,
+        receipt,
+      });
+
+    } catch (error) {
+      console.error("Error fetching transaction status:", error);
+      res.status(500).json({ error: "Failed to fetch transaction status" });
+    }
+  });
+
+  // Get event logs for address
+  app.get("/api/wallet/:address/events", async (req, res) => {
+    try {
+      const { address } = req.params;
+      const { fromBlock = "0", toBlock = "99999999" } = req.query;
+      
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+        return res.status(400).json({ error: "Invalid Ethereum address" });
+      }
+
+      const fromBlockNum = parseInt(fromBlock as string) || 0;
+      const toBlockNum = parseInt(toBlock as string) || 99999999;
+      
+      const events = await etherscanService.getEventLogs(address, fromBlockNum, toBlockNum);
+      
+      res.json({
+        address,
+        events,
+        fromBlock: fromBlockNum,
+        toBlock: toBlockNum,
+      });
+
+    } catch (error) {
+      console.error("Error fetching event logs:", error);
+      res.status(500).json({ error: "Failed to fetch event logs" });
     }
   });
 
