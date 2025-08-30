@@ -786,8 +786,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Generating fallback blocks data");
         const blocksToGenerate = 6 - blocks.length;
         for (let i = 0; i < blocksToGenerate; i++) {
-          const blockNumber = latestBlockNumber - blocks.length - i;
-          const timeAgo = (blocks.length + i) * 12; // 12 seconds per block
+          const blockNumber: number = latestBlockNumber - blocks.length - i;
+          const timeAgo: number = (blocks.length + i) * 12; // 12 seconds per block
           const txCount = Math.floor(Math.random() * 300) + 100; // 100-400 transactions
           const gasUsed = Math.floor(Math.random() * 15000000) + 10000000; // 10-25M gas
           
