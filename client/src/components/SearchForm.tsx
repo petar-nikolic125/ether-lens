@@ -9,8 +9,8 @@ interface SearchFormProps {
 }
 
 export const SearchForm = ({ onSearch }: SearchFormProps) => {
-  const [address, setAddress] = useState("");
-  const [startBlock, setStartBlock] = useState("");
+  const [address, setAddress] = useState("0x742d35Cc6634C0532925a3b844Bc454e4438f44e");
+  const [startBlock, setStartBlock] = useState("18000000");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,7 +84,7 @@ export const SearchForm = ({ onSearch }: SearchFormProps) => {
               <input
                   id="address"
                   type="text"
-                  placeholder="Search by Address / Txn Hash / Block / Token"
+                  placeholder="0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="ot-input h-11 text-sm w-full"
@@ -99,7 +99,7 @@ export const SearchForm = ({ onSearch }: SearchFormProps) => {
               <input
                   id="startBlock"
                   type="text"
-                  placeholder="9000000"
+                  placeholder="18000000"
                   value={startBlock}
                   onChange={(e) => setStartBlock(e.target.value)}
                   className="ot-input h-11 text-sm w-full"

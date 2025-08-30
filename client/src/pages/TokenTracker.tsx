@@ -9,12 +9,17 @@ import { Search, Coins, ArrowRightLeft, Clock, Hash } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const TokenTracker = () => {
-  const [searchAddress, setSearchAddress] = useState("");
-  const [searchStartBlock, setSearchStartBlock] = useState("");
+  const [searchAddress, setSearchAddress] = useState("0x742d35Cc6634C0532925a3b844Bc454e4438f44e");
+  const [searchStartBlock, setSearchStartBlock] = useState("18000000");
   const [activeSearch, setActiveSearch] = useState<{address: string, startBlock: string} | null>(null);
 
   const { data: tokenData, isLoading, error } = useQuery({
-    queryKey: ["/api/wallet", activeSearch?.address, "tokens", activeSearch?.startBlock],
+    queryKey: ['tokens', activeSearch?.address, activeSearch?.startBlock],
+    queryFn: async () => {
+      const response = await fetch(`/api/wallet/${activeSearch?.address}/tokens?startBlock=${activeSearch?.startBlock}`);
+      if (!response.ok) throw new Error('Failed to fetch token transfers');
+      return response.json();
+    },
     enabled: !!activeSearch?.address,
   });
 
@@ -63,7 +68,7 @@ const TokenTracker = () => {
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium mb-2">Ethereum Address</label>
                 <Input
-                  placeholder="0x..."
+                  placeholder="0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
                   value={searchAddress}
                   onChange={(e) => setSearchAddress(e.target.value)}
                   data-testid="input-token-address"
@@ -72,7 +77,7 @@ const TokenTracker = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Starting Block</label>
                 <Input
-                  placeholder="19000000"
+                  placeholder="18000000"
                   value={searchStartBlock}
                   onChange={(e) => setSearchStartBlock(e.target.value)}
                   data-testid="input-start-block"

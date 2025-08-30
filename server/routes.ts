@@ -238,9 +238,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date(parseInt(transfer.timeStamp) * 1000),
       }));
 
-      // Store token transfers
-      for (const transfer of processedTransfers) {
-        await storage.upsertTokenTransfer(transfer);
+      // Try to store token transfers, but continue if database fails
+      try {
+        for (const transfer of processedTransfers) {
+          await storage.upsertTokenTransfer(transfer);
+        }
+      } catch (dbError) {
+        console.warn("Database storage failed for token transfers, continuing without persistence:", dbError);
       }
 
       res.json({
