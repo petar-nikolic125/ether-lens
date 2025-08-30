@@ -10,8 +10,19 @@ config();
 // Etherscan API service
 class EtherscanService {
   public baseUrl = "https://api.etherscan.io/v2/api";
-  public apiKey = process.env.ETHERSCAN_API_KEY;
+  private apiKey = process.env.ETHERSCAN_API_KEY;
   private chainId = "1"; // Ethereum mainnet
+
+  constructor() {
+    if (!this.apiKey) {
+      throw new Error("ETHERSCAN_API_KEY environment variable is required");
+    }
+  }
+
+  // Secure method to build URLs with API key
+  private buildUrl(baseParams: string): string {
+    return `${this.baseUrl}?${baseParams}&apikey=${this.apiKey}`;
+  }
 
   // Rate limiting helper
   private async delay(ms: number) {
@@ -44,7 +55,7 @@ class EtherscanService {
     
     const data = await this.makeRequest(url);
     
-    console.log("Etherscan V2 transactions API response:", data);
+    // API response logging removed for security
     
     // Handle "No transactions found" case - this is normal and not an error
     if (data.status === "0" && data.message === "No transactions found") {
@@ -52,7 +63,7 @@ class EtherscanService {
     }
     
     if (data.status !== "1") {
-      console.error("Etherscan API error:", data);
+      console.error("Etherscan API error - status:", data.status, "message:", data.message);
       throw new Error(data.message || data.result || "Failed to fetch transactions");
     }
     
@@ -64,7 +75,7 @@ class EtherscanService {
     
     const data = await this.makeRequest(url);
     
-    console.log("Etherscan V2 token transfers API response:", data);
+    // API response logging removed for security
     
     // Handle "No transactions found" case - this is normal and not an error
     if (data.status === "0" && data.message === "No transactions found") {
@@ -72,7 +83,7 @@ class EtherscanService {
     }
     
     if (data.status !== "1") {
-      console.error("Etherscan token API error:", data);
+      console.error("Etherscan token API error - status:", data.status, "message:", data.message);
       throw new Error(data.message || data.result || "Failed to fetch token transfers");
     }
     
@@ -85,10 +96,10 @@ class EtherscanService {
     
     const data = await this.makeRequest(url);
     
-    console.log("Etherscan V2 balance API response:", data);
+    // API response logging removed for security
     
     if (data.status !== "1") {
-      console.error("Etherscan balance API error:", data);
+      console.error("Etherscan balance API error - status:", data.status, "message:", data.message);
       throw new Error(data.message || data.result || "Failed to fetch balance");
     }
     
@@ -592,7 +603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cachedData) {
         return res.json(cachedData);
       }
-      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${process.env.ETHERSCAN_API_KEY}`;
       const blockResponse = await fetch(url);
       const data = await blockResponse.json();
       
@@ -611,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let i = 0; i < 6; i++) {
         try {
           const blockNumber = latestBlockNumber - i;
-          const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+          const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${process.env.ETHERSCAN_API_KEY}`;
           const blockResponse = await fetch(blockUrl);
           const blockData = await blockResponse.json();
           
@@ -654,7 +665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error details:", error.message);
       // Still try to get at least basic block data
       try {
-        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${process.env.ETHERSCAN_API_KEY}`;
         const blockResponse = await fetch(blockUrl);
         const blockData = await blockResponse.json();
         if (blockData.result) {
@@ -686,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cachedData) {
         return res.json(cachedData);
       }
-      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${process.env.ETHERSCAN_API_KEY}`;
       const txResponse = await fetch(url);
       const data = await txResponse.json();
       
@@ -705,7 +716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let blockOffset = 0; blockOffset < 5 && transactions.length < 6; blockOffset++) {
         try {
           const blockNumber = latestBlockNumber - blockOffset;
-          const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+          const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${process.env.ETHERSCAN_API_KEY}`;
           const blockResponse = await fetch(blockUrl);
           const blockData = await blockResponse.json();
           
@@ -747,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Full error details:", error.message, error.stack);
       // Still try to get at least latest block number
       try {
-        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${process.env.ETHERSCAN_API_KEY}`;
         const blockResponse = await fetch(blockUrl);
         const blockData = await blockResponse.json();
         if (blockData.result) {
@@ -831,7 +842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Fetch ETH price from Etherscan to match their data exactly
       try {
-        const ethPriceUrl = `${etherscanService.baseUrl}?chainid=1&module=stats&action=ethprice&apikey=${etherscanService.apiKey}`;
+        const ethPriceUrl = `${etherscanService.baseUrl}?chainid=1&module=stats&action=ethprice&apikey=${process.env.ETHERSCAN_API_KEY}`;
         const priceResponse = await fetch(ethPriceUrl);
         const priceData = await priceResponse.json();
         
@@ -848,7 +859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch latest block
       try {
-        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+        const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_blockNumber&apikey=${process.env.ETHERSCAN_API_KEY}`;
         const blockResponse = await fetch(blockUrl);
         const blockData = await blockResponse.json();
         if (blockData.result && typeof blockData.result === 'string') {
@@ -863,7 +874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch gas price
       try {
-        const gasUrl = `${etherscanService.baseUrl}?chainid=1&module=gastracker&action=gasoracle&apikey=${etherscanService.apiKey}`;
+        const gasUrl = `${etherscanService.baseUrl}?chainid=1&module=gastracker&action=gasoracle&apikey=${process.env.ETHERSCAN_API_KEY}`;
         const gasResponse = await fetch(gasUrl);
         const gasData = await gasResponse.json();
         if (gasData.result) {
@@ -956,7 +967,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get network activity metrics
   app.get("/api/network-activity", async (req, res) => {
     try {
-      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${etherscanService.apiKey}`;
+      const url = `${etherscanService.baseUrl}?module=proxy&action=eth_blockNumber&apikey=${process.env.ETHERSCAN_API_KEY}`;
       const response = await fetch(url);
       const data = await response.json();
       
@@ -975,7 +986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (let i = 9; i >= 0; i--) {
           try {
             const blockNumber = latestBlockNumber - i;
-            const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${etherscanService.apiKey}`;
+            const blockUrl = `${etherscanService.baseUrl}?chainid=1&module=proxy&action=eth_getBlockByNumber&tag=0x${blockNumber.toString(16)}&boolean=true&apikey=${process.env.ETHERSCAN_API_KEY}`;
             const blockResponse = await fetch(blockUrl);
             const blockData = await blockResponse.json();
             
