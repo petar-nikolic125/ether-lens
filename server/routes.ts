@@ -600,9 +600,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const targetDate = new Date(currentTime - (daysAgo * 24 * 60 * 60 * 1000));
         const timestamp = Math.floor(targetDate.getTime() / 1000);
         
-        // Use current balance as the baseline since we can't get historical
-        const estimatedBalance = baseBalance;
-        const balanceWei = (BigInt(Math.floor(estimatedBalance * 1e18))).toString();
+        // Use realistic historical estimation instead of flat baseline
+        const balanceWei = await estimateHistoricalBalance(address, timestamp, etherscanService);
+        const estimatedBalance = parseFloat((BigInt(balanceWei) / BigInt("1000000000000000000")).toString());
         
         // Estimate block number
         const currentBlock = await etherscanService.getLatestBlockNumber();
