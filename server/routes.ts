@@ -99,11 +99,11 @@ class EtherscanService {
     // API response logging removed for security
     
     if (data.status !== "1") {
-      // For free tier API limitations, provide a fallback
+      // For free tier API limitations, calculate from transactions if blockNumber provided
       if (data.message?.includes("NOTOK") || data.message?.includes("rate limit")) {
-        console.warn(`API limitation for balance ${address}, using fallback`);
-        // Return a reasonable fallback balance (0.1 ETH) for demo purposes
-        return blockNumber ? "100000000000000000" : "100000000000000000"; // 0.1 ETH in wei
+        console.warn(`API limitation for balance ${address}, will need transaction-based calculation`);
+        // Throw error to trigger transaction-based calculation fallback
+        throw new Error("API limitation - requires transaction-based calculation");
       }
       console.error("Etherscan balance API error - status:", data.status, "message:", data.message);
       throw new Error(data.message || data.result || "Failed to fetch balance");
@@ -246,6 +246,50 @@ class EtherscanService {
 
 const etherscanService = new EtherscanService();
 
+// Helper function to calculate historical balance from transaction history
+async function calculateBalanceFromTransactions(address: string, targetTimestamp: number, etherscanService: EtherscanService): Promise<string> {
+  try {
+    // Get all transactions for this address
+    const transactions = await etherscanService.getTransactions(address, 0, 99999999);
+    
+    // Filter transactions that occurred on or before the target date
+    const relevantTxs = transactions.filter((tx: any) => {
+      const txTimestamp = parseInt(tx.timeStamp);
+      return txTimestamp <= targetTimestamp;
+    });
+    
+    // Calculate balance by summing all value changes
+    let balanceWei = BigInt(0);
+    
+    for (const tx of relevantTxs) {
+      const value = BigInt(tx.value || '0');
+      const gasUsed = BigInt(tx.gasUsed || '0');
+      const gasPrice = BigInt(tx.gasPrice || '0');
+      const gasCost = gasUsed * gasPrice;
+      
+      if (tx.to && tx.to.toLowerCase() === address.toLowerCase()) {
+        // Incoming transaction
+        balanceWei += value;
+      } else if (tx.from && tx.from.toLowerCase() === address.toLowerCase()) {
+        // Outgoing transaction
+        balanceWei -= value;
+        balanceWei -= gasCost; // Subtract gas fees for outgoing transactions
+      }
+    }
+    
+    // Ensure balance is never negative
+    if (balanceWei < 0n) {
+      balanceWei = 0n;
+    }
+    
+    return balanceWei.toString();
+  } catch (error) {
+    console.warn('Failed to calculate balance from transactions:', error);
+    // If we can't calculate from transactions, return 0
+    return "0";
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Validation schemas
   const searchSchema = z.object({
@@ -385,14 +429,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         blockNumber = Math.max(0, currentBlock - estimatedBlocksAgo);
       }
       
-      // Get balance at that block with fallback to current balance if historical not available
+      // Get balance at that block with fallback to transaction-based calculation
       let balance;
       try {
         balance = await etherscanService.getBalance(validAddress, blockNumber);
       } catch (balanceError) {
-        console.warn(`Historical balance not available for ${validAddress} at block ${blockNumber}, using current balance`);
-        // Fallback to current balance since historical balance requires pro API
-        balance = await etherscanService.getBalance(validAddress);
+        console.warn(`Historical balance not available for ${validAddress} at block ${blockNumber}, calculating from transactions`);
+        // Calculate balance from transaction history since historical balance requires pro API
+        balance = await calculateBalanceFromTransactions(validAddress, timestamp, etherscanService);
       }
       
       // Calculate ETH balance properly
