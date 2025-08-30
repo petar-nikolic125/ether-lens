@@ -281,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const blockResponse = await fetch(blockUrl);
           const blockData = await blockResponse.json();
           
-          if (blockData.result && blockData.result.number && blockData.result.timestamp && blockData.result.gasUsed) {
+          if (blockData.result && blockData.result.number && blockData.result.timestamp) {
             const block = blockData.result;
             const now = Date.now();
             const blockTime = parseInt(block.timestamp, 16) * 1000;
@@ -289,13 +289,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Parse values with validation
             const parsedBlockNumber = parseInt(block.number, 16);
-            const parsedGasUsed = parseInt(block.gasUsed, 16);
+            const parsedGasUsed = block.gasUsed ? parseInt(block.gasUsed, 16) : 0;
             const parsedTimestamp = parseInt(block.timestamp, 16);
             
-            // Only add if all values are valid
-            if (!isNaN(parsedBlockNumber) && !isNaN(parsedGasUsed) && !isNaN(parsedTimestamp) && parsedTimestamp > 0) {
+            // Only add if core values are valid
+            if (!isNaN(parsedBlockNumber) && !isNaN(parsedTimestamp) && parsedTimestamp > 0) {
               // Format gas used properly (in millions for readability)
-              const gasUsedFormatted = (parsedGasUsed / 1000000).toFixed(2) + "M";
+              const gasUsedFormatted = !isNaN(parsedGasUsed) ? (parsedGasUsed / 1000000).toFixed(2) + "M" : "0.00M";
               
               blocks.push({
                 number: parsedBlockNumber.toString(),
